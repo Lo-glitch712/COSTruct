@@ -1,0 +1,1000 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Estimation – COSTruct</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Fraunces:opsz,wght@9..144,700;9..144,800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --g900:#052016;--g800:#0a3d2b;--g700:#0d4f37;--g600:#0f5a3f;--g400:#1a8a5e;
+  --g200:#a8dfc7;--g100:#d4f0e3;--g50:#edf8f3;
+  --ink:#111816;--ink2:#3a4a42;--ink3:#6b7a72;
+  --bg:#f2f5f3;--card:#fff;--border:#dde8e2;
+  --red:#dc3545;--accent:#1a8a5e;
+  --shadow:0 4px 20px rgba(10,61,43,0.09);
+  --r:14px;--r-lg:18px;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(--ink)}
+nav{position:fixed;top:0;left:0;right:0;z-index:200;background:var(--g900);height:60px;display:flex;align-items:center;justify-content:space-between;padding:0 20px;border-bottom:1px solid rgba(255,255,255,0.07)}
+.logo{font-family:'Fraunces',serif;font-size:20px;color:#fff;font-weight:700;letter-spacing:-.3px}
+.logo span{color:var(--g200)}
+.nav-right{display:flex;align-items:center;gap:10px}
+.nav-link{color:rgba(255,255,255,0.65);font-size:14px;text-decoration:none;font-weight:500;display:none}
+.nav-link:hover{color:#fff}
+@media(min-width:640px){.nav-link{display:inline}}
+.login-pill{background:rgba(255,255,255,0.12);color:#fff;padding:6px 14px;border-radius:8px;font-size:13px;font-weight:600;text-decoration:none;border:1px solid rgba(255,255,255,0.18)}
+.burger{background:none;border:none;cursor:pointer;padding:6px;display:flex;flex-direction:column;gap:5px}
+.burger span{display:block;width:22px;height:2px;background:rgba(255,255,255,0.8);border-radius:2px}
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:300;backdrop-filter:blur(3px)}
+.overlay.show{display:block}
+.sidebar{position:fixed;top:0;right:-320px;width:300px;height:100vh;background:var(--card);z-index:400;transition:right .35s cubic-bezier(.4,0,.2,1);box-shadow:var(--shadow);display:flex;flex-direction:column}
+.sidebar.open{right:0}
+.sb-head{background:var(--g800);padding:24px 20px;position:relative}
+.sb-close{position:absolute;top:14px;right:14px;background:rgba(255,255,255,0.12);border:none;color:#fff;width:30px;height:30px;border-radius:8px;cursor:pointer;font-size:17px;display:flex;align-items:center;justify-content:center}
+.sb-avatar{width:42px;height:42px;border-radius:10px;background:var(--g600);display:flex;align-items:center;justify-content:center;font-size:18px;margin-bottom:10px}
+.sb-name{color:#fff;font-size:15px;font-weight:600}
+.sb-email{color:rgba(255,255,255,0.55);font-size:12px;margin-top:2px}
+.sb-nav{padding:10px 0;flex:1}
+.s-item{display:flex;align-items:center;gap:12px;padding:12px 18px;text-decoration:none;color:var(--ink2);font-size:14px;font-weight:500;border-left:3px solid transparent;transition:.2s;cursor:pointer}
+.s-item:hover{background:var(--g50);border-left-color:var(--g600);color:var(--g800)}
+.s-item .ico{width:20px;text-align:center;font-size:16px}
+.sb-foot{padding:14px 18px;border-top:1px solid var(--border)}
+.logout-btn{width:100%;padding:11px;background:var(--red);color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer}
+.page-top{margin-top:60px;padding:28px 20px 20px;background:linear-gradient(135deg,var(--g900) 0%,var(--g800) 100%);color:#fff}
+.page-top h1{font-family:'Fraunces',serif;font-size:24px;font-weight:800;letter-spacing:-.5px}
+.page-top p{font-size:13px;color:rgba(255,255,255,0.6);margin-top:3px}
+.steps-bar{display:flex;background:var(--card);border-bottom:1px solid var(--border);overflow-x:auto;scrollbar-width:none;position:sticky;top:60px;z-index:100}
+.steps-bar::-webkit-scrollbar{display:none}
+.step-tab{flex:1;min-width:76px;padding:12px 6px;text-align:center;cursor:pointer;font-size:12px;font-weight:600;color:var(--ink3);border-bottom:3px solid transparent;transition:.2s;white-space:nowrap}
+.step-tab.active{color:var(--g800);border-bottom-color:var(--g600)}
+.step-tab.done{color:var(--accent)}
+.step-num{display:inline-flex;width:20px;height:20px;border-radius:50%;background:var(--border);align-items:center;justify-content:center;font-size:10px;margin-right:4px;transition:.2s}
+.step-tab.active .step-num{background:var(--g800);color:#fff}
+.step-tab.done .step-num{background:var(--accent);color:#fff}
+main{padding:16px 16px 100px;max-width:600px;margin:0 auto}
+.panel{display:none;animation:fadeUp .25s ease}
+.panel.active{display:block}
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.card{background:var(--card);border-radius:var(--r-lg);padding:20px;margin-bottom:16px;border:1px solid var(--border)}
+.card-title{font-family:'Fraunces',serif;font-size:16px;font-weight:700;color:var(--g800);margin-bottom:16px;display:flex;align-items:center;gap:8px}
+.ct-icon{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:6px;background:var(--g800);color:#fff;font-size:10px;font-weight:700;font-family:'Plus Jakarta Sans',sans-serif;flex-shrink:0;letter-spacing:0}
+.field{margin-bottom:16px}
+.field label{display:block;font-size:11px;font-weight:700;color:var(--ink3);margin-bottom:6px;text-transform:uppercase;letter-spacing:.6px}
+.field input,.field select{width:100%;padding:13px 14px;border:1.5px solid var(--border);border-radius:12px;font-family:inherit;font-size:15px;color:var(--ink);background:var(--bg);transition:.2s;outline:none;appearance:none;-webkit-appearance:none}
+.field input:focus,.field select:focus{border-color:var(--g600);background:#fff}
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.field-row-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+.toggle-group{display:flex;gap:8px;flex-wrap:wrap}
+.tog-btn{flex:1;min-width:70px;padding:11px 8px;border:1.5px solid var(--border);border-radius:11px;background:var(--card);cursor:pointer;font-family:inherit;font-size:13px;font-weight:600;color:var(--ink3);transition:.2s;text-align:center}
+.tog-btn.sel{border-color:var(--g600);background:var(--g50);color:var(--g800)}
+/* RECOMMEND BOX */
+.rec-box{background:var(--g50);border:1.5px solid var(--g100);border-radius:12px;padding:14px 16px;margin-bottom:16px}
+.rec-title{font-size:11px;font-weight:700;color:var(--g700);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px}
+.rec-row{display:flex;justify-content:space-between;align-items:center;padding:4px 0;font-size:13px}
+.rec-label{color:var(--ink3)}
+.rec-val{font-weight:700;color:var(--g800);font-family:'Fraunces',serif;font-size:14px}
+/* CEMENT */
+.cement-box{border:1.5px solid var(--g100);border-radius:12px;padding:14px 16px;background:var(--g50);margin-bottom:16px}
+.cement-box-label{font-size:11px;font-weight:700;color:var(--g700);text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px}
+/* FLOORS */
+.floors-list{display:flex;flex-direction:column;gap:10px;margin-bottom:16px}
+.floor-row{background:var(--bg);border-radius:12px;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;border:1px solid var(--border)}
+.fl-label{font-weight:700;font-size:14px;color:var(--g800)}
+.fl-sub{font-size:12px;color:var(--ink3);margin-top:2px}
+.fl-del{background:none;border:none;color:#ccc;font-size:17px;cursor:pointer;padding:4px 8px;border-radius:6px;transition:.2s}
+.fl-del:hover{color:var(--red);background:#fde8e8}
+.add-floor-btn{width:100%;padding:13px;border:2px dashed var(--border);border-radius:12px;background:transparent;cursor:pointer;font-family:inherit;font-size:14px;font-weight:600;color:var(--ink3);transition:.2s;display:flex;align-items:center;justify-content:center;gap:8px}
+.add-floor-btn:hover{border-color:var(--g600);color:var(--g800);background:var(--g50)}
+.flow-diagram{background:var(--g50);border-radius:12px;padding:14px;margin-bottom:16px;border:1px solid var(--g100)}
+.flow-row{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.flow-box{background:#fff;border:1.5px solid var(--border);border-radius:8px;padding:5px 9px;font-weight:600;font-size:11px;color:var(--g800)}
+.flow-arrow{color:var(--accent);font-size:13px}
+.flow-note{font-size:11px;color:var(--ink3);margin-top:6px}
+.info-note{background:#fffbea;border:1px solid #f6e05e;border-radius:10px;padding:10px 13px;font-size:12px;color:#744210;margin-bottom:14px}
+.info-green{background:var(--g50);border:1px solid var(--g100);border-radius:10px;padding:10px 13px;font-size:12px;color:var(--g700);margin-bottom:14px}
+/* RESULTS */
+.result-hero{background:linear-gradient(135deg,var(--g900),var(--g800));border-radius:var(--r-lg);padding:28px;text-align:center;margin-bottom:16px;color:#fff;border:1px solid rgba(255,255,255,0.06)}
+.big-amount{font-family:'Fraunces',serif;font-size:38px;font-weight:800;letter-spacing:-1px}
+.big-label{font-size:12px;opacity:.7;margin-top:4px;text-transform:uppercase;letter-spacing:.6px}
+.result-chips{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:16px}
+.chip-r{background:var(--card);border-radius:12px;padding:14px 10px;text-align:center;border:1px solid var(--border)}
+.chip-r .cv{font-family:'Fraunces',serif;font-size:20px;font-weight:700;color:var(--g800)}
+.chip-r .cl{font-size:11px;color:var(--ink3);margin-top:2px}
+.floor-result{margin-bottom:12px}
+.floor-result-head{background:var(--g800);color:#fff;padding:11px 14px;border-radius:12px 12px 0 0;font-weight:700;font-size:14px;display:flex;justify-content:space-between}
+.floor-result-body{background:var(--card);border-radius:0 0 12px 12px;padding:12px 14px;border:1px solid var(--border);border-top:none}
+.mat-line{display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border);font-size:13px}
+.mat-line:last-child{border-bottom:none}
+.mn{color:var(--ink2)}
+.mq{font-weight:700;color:var(--g800)}
+.mc{font-size:12px;color:var(--ink3);margin-left:6px}
+.cost-breakdown{background:var(--card);border-radius:12px;padding:16px;border:1px solid var(--border);margin-bottom:12px}
+.cb-row{display:flex;justify-content:space-between;padding:8px 0;font-size:14px;border-bottom:1px solid var(--border)}
+.cb-row:last-child{border-bottom:none;font-weight:700;color:var(--g800);font-size:15px}
+.bottom-nav{position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:1px solid var(--border);padding:12px 16px;display:flex;gap:10px;max-width:600px;margin:0 auto;z-index:150}
+.btn{flex:1;padding:14px;border:none;border-radius:12px;font-family:inherit;font-size:15px;font-weight:700;cursor:pointer;transition:.2s}
+.btn-primary{background:var(--g800);color:#fff}
+.btn-primary:hover{background:var(--g600)}
+.btn-ghost{background:var(--bg);color:var(--ink3);flex:0 0 auto;width:50px;border:1.5px solid var(--border)}
+.btn-accent{background:var(--accent);color:#fff}
+.btn-accent:hover{background:var(--g700)}
+.result-actions{display:flex;gap:10px;margin-top:4px}
+.ra-btn{flex:1;padding:13px;border:none;border-radius:12px;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer;transition:.2s}
+.ra-save{background:var(--g800);color:#fff}.ra-save:hover{background:var(--g600)}
+.ra-print{background:var(--g50);color:var(--g800);border:1.5px solid var(--g200)}
+.ra-sup{background:var(--g50);color:var(--g800);border:1.5px solid var(--g200)}
+.empty{text-align:center;padding:40px 20px;color:var(--ink3)}
+.empty .ico{font-size:44px;margin-bottom:12px}
+.empty p{font-size:14px;line-height:1.5}
+.badge{display:inline-block;padding:3px 8px;border-radius:20px;font-size:11px;font-weight:700}
+.badge-green{background:var(--g50);color:var(--g700)}
+
+/* SAVED ESTIMATES VIEW */
+#savedView{display:none;padding-bottom:40px}
+.saved-header{background:linear-gradient(135deg,var(--g900),var(--g800));color:#fff;padding:28px 20px 20px;margin-top:60px}
+.saved-header h1{font-family:'Fraunces',serif;font-size:22px;font-weight:800;letter-spacing:-.5px}
+.saved-header p{font-size:13px;color:rgba(255,255,255,0.6);margin-top:3px}
+.saved-header .new-btn{display:inline-flex;align-items:center;gap:6px;margin-top:14px;padding:9px 18px;background:var(--g600);color:#fff;border:none;border-radius:10px;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer;text-decoration:none}
+.saved-header .new-btn:hover{background:var(--g400)}
+.est-list{max-width:600px;margin:0 auto;padding:16px 16px 40px}
+.est-card{background:var(--card);border-radius:var(--r-lg);border:1px solid var(--border);margin-bottom:14px;overflow:hidden}
+.est-card-head{padding:16px 18px;display:flex;justify-content:space-between;align-items:flex-start;gap:10px;cursor:pointer}
+.est-card-head:hover{background:var(--g50)}
+.est-name{font-size:15px;font-weight:700;color:var(--g900)}
+.est-meta{font-size:12px;color:var(--ink3);margin-top:3px}
+.est-total{font-family:'Fraunces',serif;font-size:18px;font-weight:800;color:var(--g800);white-space:nowrap}
+.est-body{display:none;border-top:1px solid var(--border);padding:14px 18px;background:var(--bg)}
+.est-body.open{display:block}
+.est-del-btn{margin-top:12px;padding:8px 16px;background:none;border:1.5px solid #f5c6cb;color:var(--red);border-radius:8px;font-size:13px;font-weight:600;cursor:pointer}
+.est-del-btn:hover{background:#fde8e8}
+</style>
+</head>
+<body>
+
+<!-- SAVED ESTIMATES VIEW -->
+<div id="savedView">
+  <div class="saved-header">
+    <h1>Saved Estimates</h1>
+    <p>Your previously saved material estimates</p>
+    <a href="estimation.html" class="new-btn">+ New Estimate</a>
+  </div>
+  <div class="est-list" id="estList"></div>
+</div>
+
+<nav>
+  <div class="logo">CO<span>S</span>truct</div>
+  <div class="nav-right">
+    <a href="index.html" class="nav-link">Home</a>
+    <a href="suppliers.html" class="nav-link">Suppliers</a>
+    <a href="login.html" class="login-pill" id="loginBtn">Login</a>
+    <button class="burger" id="burgerBtn" onclick="toggleSidebar()"><span></span><span></span><span></span></button>
+  </div>
+</nav>
+
+<div class="overlay" id="overlay" onclick="toggleSidebar()"></div>
+<div class="sidebar" id="sidebar">
+  <button class="sb-close" onclick="toggleSidebar()">&times;</button>
+  <div class="sb-head">
+    <div class="sb-avatar">U</div>
+    <div class="sb-name" id="sbName">User Name</div>
+    <div class="sb-email" id="sbEmail">user@email.com</div>
+  </div>
+  <div class="sb-nav">
+    <a href="index.html" class="s-item">Home</a>
+    <a href="estimation.html" class="s-item">Estimation</a>
+    <a href="suppliers.html" class="s-item">Suppliers</a>
+    <div class="s-item">Profile</div>
+    <a href="admin.html" class="s-item" id="adminLink" style="display:none">Admin Dashboard</a>
+  </div>
+  <div class="sb-foot"><button class="logout-btn" onclick="doLogout()">Logout</button></div>
+</div>
+
+<div class="page-top">
+  <h1>Material Estimator</h1>
+  <p>Step-by-step cost calculation per floor</p>
+</div>
+
+<!-- STEPS: Project → Materials → Floors → Results -->
+<div class="steps-bar" id="stepsBar">
+  <div class="step-tab active" data-step="0" onclick="goStep(0)"><span class="step-num">1</span>Project</div>
+  <div class="step-tab" data-step="1" onclick="goStep(1)"><span class="step-num">2</span>Materials</div>
+  <div class="step-tab" data-step="2" onclick="goStep(2)"><span class="step-num">3</span>Floors</div>
+  <div class="step-tab" data-step="3" onclick="goStep(3)"><span class="step-num">4</span>Results</div>
+</div>
+
+<main>
+
+<!-- ========== STEP 1: PROJECT ========== -->
+<div class="panel active" id="panel-0">
+
+  <div class="card">
+    <div class="card-title"><span class="ct-icon">P</span> Project Details</div>
+    <div class="field">
+      <label>Project Name</label>
+      <input type="text" id="projName" placeholder="e.g. My New House">
+    </div>
+    <div class="field">
+      <label>Building Type</label>
+      <div class="toggle-group" id="buildingTypeTog">
+        <button class="tog-btn sel" onclick="selTog('buildingTypeTog',this,'residential')">Residential</button>
+        <button class="tog-btn" onclick="selTog('buildingTypeTog',this,'commercial')">Commercial</button>
+        <button class="tog-btn" onclick="selTog('buildingTypeTog',this,'warehouse')">Warehouse</button>
+      </div>
+      <input type="hidden" id="buildingType" value="residential">
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><span class="ct-icon">D</span> Floor Dimensions</div>
+    <div class="info-note">Enter the dimensions for a floor. You can add more floors in Step 3.</div>
+    <div class="field-row">
+      <div class="field"><label>Length (m)</label><input type="number" id="fLength" placeholder="10" step="0.1" min="0" inputmode="decimal" oninput="updateRecs()"></div>
+      <div class="field"><label>Width (m)</label><input type="number" id="fWidth" placeholder="8" step="0.1" min="0" inputmode="decimal" oninput="updateRecs()"></div>
+    </div>
+    <div class="field"><label>Wall Height (m)</label><input type="number" id="wHeight" placeholder="3" step="0.1" min="0" inputmode="decimal" oninput="updateRecs()"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><span class="ct-icon">S</span> Structural Elements</div>
+
+    <!-- COLUMNS -->
+    <div class="field-row">
+      <div class="field"><label>No. of Columns</label><input type="number" id="columns" value="4" min="0" inputmode="numeric" oninput="updateRecs()"></div>
+      <div class="field"><label>Column Size</label>
+        <select id="colSize" onchange="updateRecs()">
+          <option value="200">200×200 mm</option>
+          <option value="250">250×250 mm</option>
+          <option value="300" selected>300×300 mm</option>
+          <option value="350">350×350 mm</option>
+          <option value="400">400×400 mm</option>
+        </select>
+      </div>
+    </div>
+    <div class="rec-box" id="colRecBox" style="display:none">
+      <div class="rec-title">Recommended Column Size</div>
+      <div id="colRecItems"></div>
+    </div>
+
+    <!-- BEAMS -->
+    <div class="field-row">
+      <div class="field"><label>No. of Beams</label><input type="number" id="beams" value="6" min="0" inputmode="numeric" oninput="updateRecs()"></div>
+      <div class="field"><label>Beam Length (m)</label><input type="number" id="beamLen" placeholder="5" step="0.1" min="0" inputmode="decimal" oninput="updateRecs()"></div>
+    </div>
+    <div class="info-green">Set beam cross-section (Depth × Width)</div>
+    <div class="field-row-3">
+      <div class="field"><label>Depth (mm)</label>
+        <select id="beamDepth" onchange="updateRecs()">
+          <option value="200">200</option><option value="250">250</option>
+          <option value="300" selected>300</option><option value="350">350</option>
+          <option value="400">400</option><option value="450">450</option><option value="500">500</option>
+        </select>
+      </div>
+      <div class="field"><label>Width (mm)</label>
+        <select id="beamWidth" onchange="updateRecs()">
+          <option value="150">150</option><option value="200" selected>200</option>
+          <option value="250">250</option><option value="300">300</option>
+        </select>
+      </div>
+      <div class="field"><label>Main Bar</label>
+        <select id="beamSteelSize">
+          <option value="12">12mm</option><option value="16" selected>16mm</option><option value="20">20mm</option>
+        </select>
+      </div>
+    </div>
+    <div class="rec-box" id="beamRecBox" style="display:none">
+      <div class="rec-title">Recommended Beam Size</div>
+      <div id="beamRecItems"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><span class="ct-icon">★</span> Select Supplier</div>
+    <div class="info-green">Choose a supplier to use their prices in Step 2.</div>
+    <div class="field">
+      <label>Supplier</label>
+      <select id="supplierSel" onchange="onSupplierChange()">
+        <option value="">— Manual / Average Prices —</option>
+      </select>
+    </div>
+    <div id="supplierInfo" style="display:none;margin-top:10px;background:var(--g50);border:1px solid var(--g100);border-radius:10px;padding:12px 14px">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div style="width:36px;height:36px;border-radius:8px;background:var(--g800);color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;letter-spacing:.3px" id="supIcon">SUP</div>
+        <div>
+          <div style="font-weight:700;font-size:14px;color:var(--g800)" id="supName">—</div>
+          <div style="font-size:12px;color:var(--ink3)" id="supMeta">—</div>
+        </div>
+      </div>
+      <div id="supAvailNote" style="margin-top:10px;font-size:12px;color:var(--ink3)"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><span class="ct-icon">W</span> Walls</div>
+    <div class="field">
+      <label>Wall Type</label>
+      <div class="toggle-group" id="wallTypeTog">
+        <button class="tog-btn sel" onclick="selTog('wallTypeTog',this,'chb')">CHB</button>
+        <button class="tog-btn" onclick="selTog('wallTypeTog',this,'concrete')">Concrete</button>
+      </div>
+      <input type="hidden" id="wallType" value="chb">
+    </div>
+    <div class="field">
+      <label>CHB Size</label>
+      <div class="toggle-group" id="chbSizeTog">
+        <button class="tog-btn sel" onclick="selTog('chbSizeTog',this,'4')">4" CHB</button>
+        <button class="tog-btn" onclick="selTog('chbSizeTog',this,'6')">6" CHB</button>
+      </div>
+      <input type="hidden" id="chbSize" value="4">
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><span class="ct-icon">F</span> Finishes</div>
+    <div class="field">
+      <label>Floor Tiles</label>
+      <div class="toggle-group" id="tileSizeTog">
+        <button class="tog-btn sel" onclick="selTog('tileSizeTog',this,'none')">None</button>
+        <button class="tog-btn" onclick="selTog('tileSizeTog',this,'60x60')">60×60 cm</button>
+        <button class="tog-btn" onclick="selTog('tileSizeTog',this,'40x40')">40×40 cm</button>
+      </div>
+      <input type="hidden" id="tileSize" value="none">
+    </div>
+    <div class="field">
+      <label>Roofing</label>
+      <div class="toggle-group" id="roofingTog">
+        <button class="tog-btn sel" onclick="selTog('roofingTog',this,'yes')">Include</button>
+        <button class="tog-btn" onclick="selTog('roofingTog',this,'no')">Skip</button>
+      </div>
+      <input type="hidden" id="roofing" value="yes">
+    </div>
+  </div>
+</div>
+
+<!-- ========== STEP 2: MATERIALS ========== -->
+<div class="panel" id="panel-1">
+
+  <div class="card">
+    <div class="card-title"><span class="ct-icon">₱</span> Material Prices</div>
+    <div class="info-note" id="priceNote">Prices based on average suppliers in the Partido Area. Adjust as needed.</div>
+
+    <!-- CEMENT: Portland & Pozzolan -->
+    <div class="cement-box" data-mat-group="cement">
+      <div class="cement-box-label">Cement Type</div>
+      <div class="field">
+        <div class="toggle-group" id="cementTypeTog">
+          <button class="tog-btn sel" onclick="selTog('cementTypeTog',this,'portland');showCementFields()">Portland</button>
+          <button class="tog-btn" onclick="selTog('cementTypeTog',this,'pozzolan');showCementFields()">Pozzolan</button>
+          <button class="tog-btn" onclick="selTog('cementTypeTog',this,'both');showCementFields()">Both</button>
+        </div>
+        <input type="hidden" id="cementType" value="portland">
+      </div>
+      <div id="portlandRow" data-mat-key="pCementPortland">
+        <div class="field"><label>Portland Cement /bag (₱)</label><input type="number" id="pCementPortland" value="295" inputmode="decimal"></div>
+      </div>
+      <div id="pozzolanRow" data-mat-key="pCementPozzolan" style="display:none">
+        <div class="field"><label>Pozzolan Cement /bag (₱)</label><input type="number" id="pCementPozzolan" value="265" inputmode="decimal"></div>
+      </div>
+    </div>
+
+    <div class="field-row" data-mat-key="pSand,pGravel">
+      <div class="field" data-mat-key="pSand"><label>Sand /m³ (₱)</label><input type="number" id="pSand" value="1200" inputmode="decimal"></div>
+      <div class="field" data-mat-key="pGravel"><label>Gravel /m³ (₱)</label><input type="number" id="pGravel" value="1500" inputmode="decimal"></div>
+    </div>
+    <div class="field-row" data-mat-key="pSteel10,pSteel12">
+      <div class="field" data-mat-key="pSteel10"><label>Steel 10mm /pc (₱)</label><input type="number" id="pSteel10" value="350" inputmode="decimal"></div>
+      <div class="field" data-mat-key="pSteel12"><label>Steel 12mm /pc (₱)</label><input type="number" id="pSteel12" value="475" inputmode="decimal"></div>
+    </div>
+    <div class="field-row" data-mat-key="pSteel16,pChb4">
+      <div class="field" data-mat-key="pSteel16"><label>Steel 16mm /pc (₱)</label><input type="number" id="pSteel16" value="850" inputmode="decimal"></div>
+      <div class="field" data-mat-key="pChb4"><label>CHB 4" /pc (₱)</label><input type="number" id="pChb4" value="12" inputmode="decimal"></div>
+    </div>
+    <div class="field-row" data-mat-key="pChb6,pTile">
+      <div class="field" data-mat-key="pChb6"><label>CHB 6" /pc (₱)</label><input type="number" id="pChb6" value="16" inputmode="decimal"></div>
+      <div class="field" data-mat-key="pTile"><label>Tiles /pc (₱)</label><input type="number" id="pTile" value="45" inputmode="decimal"></div>
+    </div>
+    <div class="field-row" data-mat-key="pGi,pLumber">
+      <div class="field" data-mat-key="pGi"><label>GI Sheet /pc (₱)</label><input type="number" id="pGi" value="385" inputmode="decimal"></div>
+      <div class="field" data-mat-key="pLumber"><label>Lumber 2×3 /pc (₱)</label><input type="number" id="pLumber" value="125" inputmode="decimal"></div>
+    </div>
+    <div class="field-row" data-mat-key="pWoodPanel,pNails">
+      <div class="field" data-mat-key="pWoodPanel"><label>Wood Panel /sheet (₱)</label><input type="number" id="pWoodPanel" value="850" inputmode="decimal"></div>
+      <div class="field" data-mat-key="pNails"><label>Nails /kg (₱)</label><input type="number" id="pNails" value="85" inputmode="decimal"></div>
+    </div>
+    <div class="field-row" data-mat-key="pWire">
+      <div class="field" data-mat-key="pWire"><label>Tie Wire /kg (₱)</label><input type="number" id="pWire" value="95" inputmode="decimal"></div>
+    </div>
+
+  </div>
+
+</div>
+
+<!-- ========== STEP 3: FLOORS ========== -->
+<div class="panel" id="panel-2">
+  <div class="card">
+    <div class="card-title"><span class="ct-icon">#</span> Floor Configuration</div>
+    <div class="floors-list" id="floorsList"></div>
+    <button class="add-floor-btn" onclick="addFloor()">+ Add Another Floor</button>
+  </div>
+</div>
+
+<!-- ========== STEP 4: RESULTS ========== -->
+<div class="panel" id="panel-3">
+  <div id="emptyResults" class="empty">
+    <div class="ico" style="font-size:44px;margin-bottom:12px">—</div>
+    <p>Click <strong>Calculate</strong> to view results</p>
+  </div>
+  <div id="resultsContent" style="display:none">
+    <div class="result-hero">
+      <div class="big-label">Total Project Cost</div>
+      <div class="big-amount" id="rTotal">₱0</div>
+      <div style="font-size:12px;opacity:.6;margin-top:6px" id="rProjName">—</div>
+      <div id="rSupplierTag" style="display:none;margin-top:8px;background:rgba(255,255,255,0.12);border-radius:8px;padding:5px 12px;font-size:12px;font-weight:600"><span id="rSupplierName"></span></div>
+    </div>
+    <div class="result-chips">
+      <div class="chip-r"><div class="cv" id="rArea">0</div><div class="cl">Floor Area m²</div></div>
+      <div class="chip-r"><div class="cv" id="rVol">0</div><div class="cl">Concrete m³</div></div>
+      <div class="chip-r"><div class="cv" id="rFloors">0</div><div class="cl">Floors</div></div>
+    </div>
+    <div id="floorBreakdowns"></div>
+    <div id="unavailableNote" style="display:none;background:#fff8e1;border:1px solid #ffe082;border-radius:12px;padding:14px;margin-bottom:12px;font-size:13px;color:#7b5800">
+      <div style="font-weight:700;margin-bottom:6px">ℹ Not included recommended material (supplier doesn't carry these):</div>
+      <div id="unavailableList"></div>
+      <div style="margin-top:8px;font-size:12px;color:var(--ink3)">These were excluded from the total cost.</div>
+    </div>
+    <div class="cost-breakdown">
+      <div class="cb-row"><span>Materials Cost</span><span id="rMatCost">₱0</span></div>
+      <div class="cb-row"><span>TOTAL</span><span id="rTotalBottom">₱0</span></div>
+    </div>
+    <div class="result-actions">
+      <button class="ra-btn ra-save" onclick="saveEst()">Save</button>
+      <button class="ra-btn ra-print" onclick="printEst()">Print</button>
+    </div>
+  </div>
+</div>
+
+</main>
+
+<div class="bottom-nav" id="bottomNav">
+  <button class="btn btn-ghost" id="prevBtn" onclick="prevStep()" style="display:none">←</button>
+  <button class="btn btn-primary" id="nextBtn" onclick="nextStep()">Next →</button>
+</div>
+
+<script>
+let currentStep=0,floors=[],currentUser=null;
+const totalSteps=4;
+
+function checkLogin(){
+  const u=localStorage.getItem('currentUser');
+  if(u){
+    currentUser=JSON.parse(u);
+    document.getElementById('loginBtn').style.display='none';
+    document.getElementById('burgerBtn').style.display='flex';
+    document.getElementById('sbName').textContent=currentUser.name;
+    document.getElementById('sbEmail').textContent=currentUser.email;
+    document.getElementById('sidebar').querySelector('.sb-avatar').textContent=(currentUser.name||'U').charAt(0).toUpperCase();
+    if(currentUser.role==='supplier')document.getElementById('adminLink').style.display='flex';
+  }else{document.getElementById('loginBtn').style.display='';document.getElementById('burgerBtn').style.display='none';}
+}
+function toggleSidebar(){document.getElementById('sidebar').classList.toggle('open');document.getElementById('overlay').classList.toggle('show');}
+function doLogout(){if(confirm('Logout?')){localStorage.removeItem('currentUser');window.location.href='index.html';}}
+
+// Cement type toggle
+function showCementFields(){
+  const t=document.getElementById('cementType').value;
+  document.getElementById('portlandRow').style.display=(t==='portland'||t==='both')?'block':'none';
+  document.getElementById('pozzolanRow').style.display=(t==='pozzolan'||t==='both')?'block':'none';
+}
+
+// Recommendations
+function updateRecs(){
+  const l=parseFloat(document.getElementById('fLength').value)||0;
+  const w=parseFloat(document.getElementById('fWidth').value)||0;
+  const cols=parseInt(document.getElementById('columns').value)||0;
+  const beamLen=parseFloat(document.getElementById('beamLen').value)||0;
+
+  // Column recommendation
+  const colBox=document.getElementById('colRecBox');
+  if(l>0&&w>0&&cols>0){
+    const area=l*w, apc=area/cols;
+    let rec=200;
+    if(apc>25)rec=400;else if(apc>16)rec=350;else if(apc>9)rec=300;else if(apc>4)rec=250;
+    document.getElementById('colRecItems').innerHTML=
+      `<div class="rec-row"><span class="rec-label">Floor area</span><span class="rec-val">${area.toFixed(1)} m²</span></div>`+
+      `<div class="rec-row"><span class="rec-label">Area per column</span><span class="rec-val">${apc.toFixed(1)} m²</span></div>`+
+      `<div class="rec-row"><span class="rec-label">Suggested size</span><span class="rec-val">${rec}×${rec} mm</span></div>`;
+    colBox.style.display='block';
+  }else{colBox.style.display='none';}
+
+  // Beam recommendation
+  const beamBox=document.getElementById('beamRecBox');
+  if(beamLen>0){
+    const recD=Math.ceil((beamLen*1000/12)/50)*50;
+    const recW=Math.ceil((recD*0.6)/50)*50;
+    document.getElementById('beamRecItems').innerHTML=
+      `<div class="rec-row"><span class="rec-label">Beam span</span><span class="rec-val">${beamLen} m</span></div>`+
+      `<div class="rec-row"><span class="rec-label">Suggested depth</span><span class="rec-val">${recD} mm</span></div>`+
+      `<div class="rec-row"><span class="rec-label">Suggested width</span><span class="rec-val">${recW} mm</span></div>`+
+      `<div class="rec-row"><span class="rec-label">Min. steel bar</span><span class="rec-val">${beamLen>5?'16mm':'12mm'}</span></div>`;
+    beamBox.style.display='block';
+  }else{beamBox.style.display='none';}
+}
+
+function selTog(groupId,btn,value){
+  document.getElementById(groupId).querySelectorAll('.tog-btn').forEach(b=>b.classList.remove('sel'));
+  btn.classList.add('sel');
+  const inp=document.getElementById(groupId).parentElement.querySelector('input[type=hidden]');
+  if(inp)inp.value=value;
+}
+
+function goStep(n){
+  if(n>currentStep){
+    if(!validateStep(currentStep))return;
+    if(n===2&&floors.length===0)initFloors();
+  }
+  currentStep=n;
+  document.querySelectorAll('.panel').forEach((p,i)=>p.classList.toggle('active',i===n));
+  document.querySelectorAll('.step-tab').forEach((t,i)=>{t.classList.toggle('active',i===n);t.classList.toggle('done',i<n);});
+  document.getElementById('prevBtn').style.display=n>0?'block':'none';
+  const nb=document.getElementById('nextBtn');
+  if(n===totalSteps-1){nb.textContent=' Calculate';nb.className='btn btn-accent';nb.onclick=calculate;}
+  else{nb.textContent='Next →';nb.className='btn btn-primary';nb.onclick=nextStep;}
+  window.scrollTo(0,0);
+}
+function nextStep(){if(!validateStep(currentStep))return;if(currentStep===1&&floors.length===0)initFloors();if(currentStep<totalSteps-1)goStep(currentStep+1);}
+function prevStep(){if(currentStep>0)goStep(currentStep-1);}
+function validateStep(s){
+  if(s===0){
+    const l=parseFloat(document.getElementById('fLength').value);
+    const w=parseFloat(document.getElementById('fWidth').value);
+    const h=parseFloat(document.getElementById('wHeight').value);
+    if(!l||!w||!h){alert('Please enter floor dimensions (length, width, wall height).');return false;}
+  }
+  return true;
+}
+
+function initFloors(){floors=[makeFloor(1)];renderFloors();}
+function makeFloor(num){
+  const l=parseFloat(document.getElementById('fLength').value);
+  const w=parseFloat(document.getElementById('fWidth').value);
+  const h=parseFloat(document.getElementById('wHeight').value);
+  const lbl=num===1?'1st Floor':num===2?'2nd Floor':num===3?'3rd Floor':num+'th Floor';
+  return{num,label:lbl,length:l,width:w,height:h};
+}
+function addFloor(){floors.push(makeFloor(floors.length+1));renderFloors();}
+function deleteFloor(idx){
+  if(floors.length<=1){alert('At least one floor required.');return;}
+  floors.splice(idx,1);
+  floors.forEach((f,i)=>{f.num=i+1;f.label=i===0?'1st Floor':i===1?'2nd Floor':i===2?'3rd Floor':(i+1)+'th Floor';});
+  renderFloors();
+}
+function renderFloors(){
+  document.getElementById('floorsList').innerHTML=floors.map((f,i)=>`
+    <div class="floor-row">
+      <div><div class="fl-label">${f.label}</div><div class="fl-sub">${f.length}m × ${f.width}m × ${f.height}m · Area: ${(f.length*f.width).toFixed(1)} m²</div></div>
+      <button class="fl-del" onclick="deleteFloor(${i})"></button>
+    </div>`).join('');
+}
+
+function calculate(){
+  const cols=parseInt(document.getElementById('columns').value)||0;
+  const colSizeMm=parseInt(document.getElementById('colSize').value);
+  const colSize=colSizeMm/1000;
+  const beams=parseInt(document.getElementById('beams').value)||0;
+  const beamLen=parseFloat(document.getElementById('beamLen').value)||0;
+  const beamD=parseInt(document.getElementById('beamDepth').value)/1000;
+  const beamW=parseInt(document.getElementById('beamWidth').value)/1000;
+  const beamDmm=parseInt(document.getElementById('beamDepth').value);
+  const beamWmm=parseInt(document.getElementById('beamWidth').value);
+  const wallType=document.getElementById('wallType').value;
+  const chbSize=document.getElementById('chbSize').value;
+  const tileSize=document.getElementById('tileSize').value;
+  const inclRoof=document.getElementById('roofing').value==='yes';
+  const inclWoodPanel=false;
+  const inclLabor=false;
+  const laborRate=0;
+  const cementType=document.getElementById('cementType').value;
+  const portlandPrice=parseFloat(document.getElementById('pCementPortland').value)||295;
+  const pozzolanPrice=parseFloat(document.getElementById('pCementPozzolan').value)||265;
+
+  const P={
+    sand:parseFloat(document.getElementById('pSand').value)||1200,
+    gravel:parseFloat(document.getElementById('pGravel').value)||1500,
+    s10:parseFloat(document.getElementById('pSteel10').value)||350,
+    s12:parseFloat(document.getElementById('pSteel12').value)||475,
+    s16:parseFloat(document.getElementById('pSteel16').value)||850,
+    chb4:parseFloat(document.getElementById('pChb4').value)||12,
+    chb6:parseFloat(document.getElementById('pChb6').value)||16,
+    tile:parseFloat(document.getElementById('pTile').value)||45,
+    gi:parseFloat(document.getElementById('pGi').value)||385,
+    lumber:parseFloat(document.getElementById('pLumber').value)||125,
+    woodPanel:parseFloat(document.getElementById('pWoodPanel').value)||850,
+    nails:parseFloat(document.getElementById('pNails').value)||85,
+    wire:parseFloat(document.getElementById('pWire').value)||95,
+  };
+
+  let grandMaterialCost=0,totalArea=0,totalVol=0,floorHTMLs='';
+
+  floors.forEach((f,idx)=>{
+    const area=f.length*f.width;
+    const wallPeri=2*(f.length+f.width);
+    const wallArea=wallPeri*f.height;
+    const foundVol=area*1.1*0.15;
+    const colVol=cols*colSize*colSize*f.height;
+    const beamVol=beams*beamLen*beamW*beamD;
+    const slabVol=area*0.1;
+    const concreteVol=foundVol+colVol+beamVol+slabVol;
+    const totalCementBags=Math.ceil(concreteVol*9);
+    const sand=+(concreteVol*0.5).toFixed(2);
+    const gravel=+(concreteVol*1.0).toFixed(2);
+    const s10=Math.ceil(cols*12);
+    const s12=Math.ceil((beams*beamLen)/0.3);
+    const s16=Math.ceil(area/2);
+    const nails=Math.ceil(area/10);
+    const wire=Math.ceil(concreteVol*2);
+
+    // CHB count
+    const chbPricePerPc=chbSize==='6'?P.chb6:P.chb4;
+    const chbLabel=chbSize==='6'?'CHB 6"':'CHB 4"';
+    const chbCount=wallType==='chb'?Math.ceil(wallArea*12.5):0;
+
+    // Tiles
+    let tileCount=0;
+    if(tileSize!=='none'){const tsm=tileSize==='60x60'?0.36:0.16;tileCount=Math.ceil(area/tsm);}
+
+    // Roofing (top floor only)
+    let giSheets=0,lumber=0;
+    if(inclRoof&&idx===floors.length-1){giSheets=Math.ceil((area*1.2)/2.5);lumber=Math.ceil(area/2);}
+
+    // Wood Panel
+    const woodPanelSheets=inclWoodPanel?Math.ceil(wallArea/2.88):0;
+
+    const mats=[];
+
+    // Cement
+    if(cementType==='portland'||cementType==='both'){
+      const bags=cementType==='both'?Math.ceil(totalCementBags*0.7):totalCementBags;
+      mats.push({name:'Portland Cement (40kg)',qty:bags,unit:'bags',cost:bags*portlandPrice,field:'pCementPortland'});
+    }
+    if(cementType==='pozzolan'||cementType==='both'){
+      const bags=cementType==='both'?Math.ceil(totalCementBags*0.3):totalCementBags;
+      mats.push({name:'Pozzolan Cement (40kg)',qty:bags,unit:'bags',cost:bags*pozzolanPrice,field:'pCementPozzolan'});
+    }
+
+    mats.push({name:'Sand',qty:sand,unit:'m³',cost:sand*P.sand,field:'pSand'});
+    mats.push({name:'Gravel',qty:gravel,unit:'m³',cost:gravel*P.gravel,field:'pGravel'});
+
+    if(cols>0){
+      mats.push({name:`Steel Bar 10mm — ${cols} Columns (${colSizeMm}×${colSizeMm}mm, H=${f.height}m)`,qty:s10,unit:'pcs',cost:s10*P.s10,field:'pSteel10'});
+    }else{
+      mats.push({name:'Steel Bar 10mm',qty:s10,unit:'pcs',cost:s10*P.s10,field:'pSteel10'});
+    }
+    if(beams>0&&beamLen>0){
+      mats.push({name:`Steel Bar 12mm — ${beams} Beams (${beamDmm}×${beamWmm}mm, L=${beamLen}m)`,qty:s12,unit:'pcs',cost:s12*P.s12,field:'pSteel12'});
+    }else{
+      mats.push({name:'Steel Bar 12mm',qty:s12,unit:'pcs',cost:s12*P.s12,field:'pSteel12'});
+    }
+    mats.push({name:'Steel Bar 16mm (slab)',qty:s16,unit:'pcs',cost:s16*P.s16,field:'pSteel16'});
+
+    if(chbCount>0)mats.push({name:`${chbLabel} — ${wallArea.toFixed(1)} m² wall area`,qty:chbCount,unit:'pcs',cost:chbCount*chbPricePerPc,field:chbSize==='6'?'pChb6':'pChb4'});
+    if(tileCount)mats.push({name:`Tiles ${tileSize} cm`,qty:tileCount,unit:'pcs',cost:tileCount*P.tile,field:'pTile'});
+    if(giSheets)mats.push({name:'G.I. Roofing Sheets',qty:giSheets,unit:'pcs',cost:giSheets*P.gi,field:'pGi'});
+    if(lumber)mats.push({name:'Coco Lumber 2×3',qty:lumber,unit:'pcs',cost:lumber*P.lumber,field:'pLumber'});
+    if(woodPanelSheets)mats.push({name:'Wood Panel / Haillon',qty:woodPanelSheets,unit:'sheets',cost:woodPanelSheets*P.woodPanel,field:'pWoodPanel'});
+    mats.push({name:'Assorted Nails',qty:nails,unit:'kg',cost:nails*P.nails,field:'pNails'});
+    mats.push({name:'Tie Wire',qty:wire,unit:'kg',cost:wire*P.wire,field:'pWire'});
+
+    // If a supplier is selected, only keep materials they have listed
+    const filteredMats = selectedSupplier
+      ? mats.filter(m => !m.field || supplierAvailMap[m.field] === true)
+      : mats;
+
+    const floorCost=filteredMats.reduce((s,m)=>s+(m.cost||0),0);
+    grandMaterialCost+=floorCost;
+    totalArea+=area;
+    totalVol+=concreteVol;
+
+    const matRows=filteredMats.map(m=>`<div class="mat-line"><span class="mn">${m.name}</span><span><span class="mq">${m.qty} ${m.unit}</span><span class="mc">₱${fmt(m.cost)}</span></span></div>`).join('');
+
+    floorHTMLs+=`
+      <div class="floor-result">
+        <div class="floor-result-head">
+          <span>${f.label} <span class="badge" style="background:rgba(255,255,255,0.18);color:#fff;margin-left:6px">${area.toFixed(1)} m²</span></span>
+          <span>₱${fmt(floorCost)}</span>
+        </div>
+        <div class="floor-result-body">
+          <div style="font-size:12px;color:var(--ink3);margin-bottom:8px">
+            Concrete: ${concreteVol.toFixed(2)} m³ · Wall: ${wallArea.toFixed(1)} m²${chbCount>0?' · <strong>CHB: '+chbCount.toLocaleString()+' pcs</strong>':''}
+          </div>${matRows}
+        </div>
+      </div>`;
+  });
+
+  // Custom mats
+  let customMatCost=0,customMatHTML='';
+  const validCustom=customMats.filter(m=>m.name&&parseFloat(m.qty)>0&&parseFloat(m.price)>0);
+  if(validCustom.length){
+    customMatCost=validCustom.reduce((s,m)=>s+(parseFloat(m.qty)*parseFloat(m.price)),0);
+    grandMaterialCost+=customMatCost;
+    customMatHTML=`<div class="floor-result"><div class="floor-result-head" style="background:var(--g700)"><span> Additional Materials</span><span>₱${fmt(customMatCost)}</span></div><div class="floor-result-body">${validCustom.map(m=>`<div class="mat-line"><span class="mn">${m.name}</span><span><span class="mq">${parseFloat(m.qty)} ${m.unit}</span><span class="mc">₱${fmt(parseFloat(m.qty)*parseFloat(m.price))}</span></span></div>`).join('')}</div></div>`;
+  }
+
+  const laborCost=0;
+  const totalProject=grandMaterialCost;
+  document.getElementById('rTotal').textContent='₱'+fmt(totalProject);
+  document.getElementById('rProjName').textContent=document.getElementById('projName').value||'Untitled Project';
+  document.getElementById('rArea').textContent=totalArea.toFixed(1);
+  document.getElementById('rVol').textContent=totalVol.toFixed(1);
+  document.getElementById('rFloors').textContent=floors.length;
+  document.getElementById('floorBreakdowns').innerHTML=floorHTMLs+customMatHTML;
+  document.getElementById('rMatCost').textContent='₱'+fmt(grandMaterialCost);
+  document.getElementById('rTotalBottom').textContent='₱'+fmt(grandMaterialCost);
+  const supTag=document.getElementById('rSupplierTag');
+  if(selectedSupplier){supTag.style.display='inline-block';document.getElementById('rSupplierName').textContent=selectedSupplier.name;}
+  else{supTag.style.display='none';}
+  // Show which materials were excluded because supplier doesn't carry them
+  const unavailNote=document.getElementById('unavailableNote');
+  if(selectedSupplier){
+    const excluded=Object.entries(supplierAvailMap).filter(([k,v])=>v===false).map(([k])=>MAT_MAP[k]?MAT_MAP[k].label:k);
+    if(excluded.length){
+      document.getElementById('unavailableList').innerHTML=excluded.map(l=>`<span style="display:inline-block;background:#fff;border:1px solid #ffe082;border-radius:6px;padding:2px 8px;margin:2px;font-size:12px"> ${l}</span>`).join('');
+      unavailNote.querySelector('div:first-child').textContent='ℹ Not included recommended material (supplier doesn\'t carry these):';
+      unavailNote.querySelector('div:last-child').textContent='These were excluded from the total cost.';
+      unavailNote.style.display='block';
+    }else{unavailNote.style.display='none';}
+  }else{unavailNote.style.display='none';}
+  document.getElementById('emptyResults').style.display='none';
+  document.getElementById('resultsContent').style.display='block';
+  window.scrollTo(0,0);
+}
+
+function fmt(n){return Number(n).toLocaleString('en-PH',{minimumFractionDigits:2,maximumFractionDigits:2});}
+
+function saveEst(){
+  const projName=document.getElementById('projName').value||'Untitled Project';
+  const total=document.getElementById('rTotal').textContent;
+  const area=document.getElementById('rArea').textContent;
+  const floorsCount=document.getElementById('rFloors').textContent;
+  const breakdownHTML=document.getElementById('floorBreakdowns').innerHTML;
+  const supName=selectedSupplier?selectedSupplier.name:null;
+  const est={
+    id:Date.now(),
+    name:projName,
+    total,
+    area,
+    floors:floorsCount,
+    supplier:supName,
+    breakdown:breakdownHTML,
+    savedAt:new Date().toLocaleDateString('en-PH',{year:'numeric',month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'})
+  };
+  const key='costruct_estimates_'+(currentUser?currentUser.email:'guest');
+  const saved=JSON.parse(localStorage.getItem(key)||'[]');
+  saved.unshift(est);
+  localStorage.setItem(key,JSON.stringify(saved));
+  const btn=document.querySelector('.ra-save');
+  const orig=btn.textContent;
+  btn.textContent=' Saved!';btn.style.background='var(--g600)';
+  setTimeout(()=>{btn.textContent=orig;btn.style.background='';},2000);
+}
+
+function printEst(){window.print();}
+
+// Custom materials
+let customMats=[],customMatId=0;
+function addCustomMat(){const id=++customMatId;customMats.push({id,name:'',qty:'',unit:'pcs',price:''});renderCustomMats();setTimeout(()=>{const el=document.getElementById('cmName_'+id);if(el)el.focus();},50);}
+function removeCustomMat(id){customMats=customMats.filter(m=>m.id!==id);renderCustomMats();}
+function updateCustomMat(id,field,val){const m=customMats.find(m=>m.id===id);if(m)m[field]=val;}
+function renderCustomMats(){
+  const list=document.getElementById('customMatsList');
+  if(!customMats.length){list.innerHTML='';return;}
+  list.innerHTML=customMats.map(m=>`
+    <div style="background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:12px 14px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+        <span style="font-size:12px;font-weight:700;color:var(--ink3);text-transform:uppercase;letter-spacing:.4px">Material ${m.id}</span>
+        <button onclick="removeCustomMat(${m.id})" style="background:none;border:none;color:#ccc;font-size:18px;cursor:pointer;padding:0 4px" onmouseover="this.style.color='var(--red)'" onmouseout="this.style.color='#ccc'"></button>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+        <div>
+          <div style="font-size:11px;font-weight:700;color:var(--ink3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px">Name</div>
+          <input id="cmName_${m.id}" type="text" value="${m.name}" placeholder="e.g. Paint (gal)" oninput="updateCustomMat(${m.id},'name',this.value)" style="width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:10px;font-family:inherit;font-size:14px;color:var(--ink);background:#fff;outline:none">
+        </div>
+        <div>
+          <div style="font-size:11px;font-weight:700;color:var(--ink3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px">Unit</div>
+          <select oninput="updateCustomMat(${m.id},'unit',this.value)" style="width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:10px;font-family:inherit;font-size:14px;color:var(--ink);background:#fff;outline:none;-webkit-appearance:none">
+            <option value="pcs" ${m.unit==='pcs'?'selected':''}>pcs</option>
+            <option value="bags" ${m.unit==='bags'?'selected':''}>bags</option>
+            <option value="kg" ${m.unit==='kg'?'selected':''}>kg</option>
+            <option value="m²" ${m.unit==='m²'?'selected':''}>m²</option>
+            <option value="m³" ${m.unit==='m³'?'selected':''}>m³</option>
+            <option value="liters" ${m.unit==='liters'?'selected':''}>liters</option>
+            <option value="sheets" ${m.unit==='sheets'?'selected':''}>sheets</option>
+            <option value="set" ${m.unit==='set'?'selected':''}>set</option>
+            <option value="roll" ${m.unit==='roll'?'selected':''}>roll</option>
+            <option value="box" ${m.unit==='box'?'selected':''}>box</option>
+          </select>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div>
+          <div style="font-size:11px;font-weight:700;color:var(--ink3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px">Quantity</div>
+          <input type="number" value="${m.qty}" placeholder="0" min="0" inputmode="decimal" oninput="updateCustomMat(${m.id},'qty',this.value)" style="width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:10px;font-family:inherit;font-size:14px;color:var(--ink);background:#fff;outline:none">
+        </div>
+        <div>
+          <div style="font-size:11px;font-weight:700;color:var(--ink3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px">Price /unit (₱)</div>
+          <input type="number" value="${m.price}" placeholder="0.00" min="0" inputmode="decimal" oninput="updateCustomMat(${m.id},'price',this.value)" style="width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:10px;font-family:inherit;font-size:14px;color:var(--ink);background:#fff;outline:none">
+        </div>
+      </div>
+      <div style="text-align:right;margin-top:8px;font-size:12px;color:var(--g700);font-weight:600">Subtotal: ₱${fmt((parseFloat(m.qty)||0)*(parseFloat(m.price)||0))}</div>
+    </div>`).join('');
+}
+
+// Supplier
+const MAT_MAP={
+  pCementPortland:{keys:['portland cement','portland'],label:'Portland Cement'},
+  pCementPozzolan:{keys:['pozzolan cement','pozzolan','pozzolana'],label:'Pozzolan Cement'},
+  pSand:{keys:['sand','fine sand'],label:'Sand'},
+  pGravel:{keys:['gravel','aggregate'],label:'Gravel'},
+  pSteel10:{keys:['steel bar 10mm','rebar 10mm'],label:'Steel 10mm'},
+  pSteel12:{keys:['steel bar 12mm','rebar 12mm'],label:'Steel 12mm'},
+  pSteel16:{keys:['steel bar 16mm','rebar 16mm'],label:'Steel 16mm'},
+  pChb4:{keys:['hollow blocks 4','chb 4"','chb 4'],label:'CHB 4"'},
+  pChb6:{keys:['hollow blocks 6','chb 6"','chb 6'],label:'CHB 6"'},
+  pGi:{keys:['g.i. roofing','gi sheet','gi roofing'],label:'GI Sheet'},
+  pLumber:{keys:['coco lumber 2x3','lumber 2x3'],label:'Lumber 2×3'},
+  pNails:{keys:['nails'],label:'Nails'},
+  pWire:{keys:['tie wire','binding wire'],label:'Tie Wire'},
+};
+const DEFAULT_PRICES={pCementPortland:295,pCementPozzolan:265,pSand:1200,pGravel:1500,pSteel10:350,pSteel12:475,pSteel16:850,pChb4:12,pChb6:16,pTile:45,pGi:385,pLumber:125,pNails:85,pWire:95};
+const CAT_ICONS={hardware:'',lumber:'',construction:'',cement:''};
+let selectedSupplier=null,supplierAvailMap={};
+
+function populateSupplierSelect(){
+  const suppliers=JSON.parse(localStorage.getItem('registeredSuppliers')||'[]');
+  const sel=document.getElementById('supplierSel');
+  sel.innerHTML='<option value="">— Manual / Average Prices —</option>';
+  suppliers.forEach((s,i)=>{const o=document.createElement('option');o.value=i;o.textContent=s.name+(s.location?' · '+s.location:'');sel.appendChild(o);});
+}
+function filterMaterialFields(){
+  const allFields=document.querySelectorAll('[data-mat-key]');
+  allFields.forEach(el=>{
+    const keys=el.dataset.matKey.split(',');
+    if(!selectedSupplier){
+      // No supplier — show all
+      el.style.display='';
+      return;
+    }
+    // Show field only if at least one of its keys is available from supplier
+    const show=keys.some(k=>supplierAvailMap[k]===true);
+    el.style.display=show?'':'none';
+  });
+  // Cement group: show entire cement-box only if portland or pozzolan is available
+  const cementBox=document.querySelector('[data-mat-group="cement"]');
+  if(cementBox&&selectedSupplier){
+    const hasCement=supplierAvailMap['pCementPortland']||supplierAvailMap['pCementPozzolan'];
+    cementBox.style.display=hasCement?'':'none';
+  } else if(cementBox){
+    cementBox.style.display='';
+  }
+  // Also re-run showCementFields to keep portland/pozzolan rows correct
+  showCementFields();
+}
+
+function lockPriceInputs(lock){
+  document.querySelectorAll('[data-mat-key] input[type=number]').forEach(el=>{
+    el.readOnly=lock;
+    el.style.background=lock?'var(--g50)':'#fff';
+    el.style.color=lock?'var(--g700)':'var(--ink)';
+    el.style.cursor=lock?'default':'text';
+  });
+  // Also lock cement price inputs
+  ['pCementPortland','pCementPozzolan'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el){el.readOnly=lock;el.style.background=lock?'var(--g50)':'#fff';el.style.color=lock?'var(--g700)':'var(--ink)';el.style.cursor=lock?'default':'text';}
+  });
+}
+
+function onSupplierChange(){
+  const idx=document.getElementById('supplierSel').value;
+  const suppliers=JSON.parse(localStorage.getItem('registeredSuppliers')||'[]');
+  const infoBox=document.getElementById('supplierInfo');
+  const priceNote=document.getElementById('priceNote');
+  Object.entries(DEFAULT_PRICES).forEach(([id,val])=>{const el=document.getElementById(id);if(el)el.value=val;});
+  supplierAvailMap={};selectedSupplier=null;
+  if(idx===''){
+    infoBox.style.display='none';
+    priceNote.innerHTML='Prices based on average suppliers in the Partido Area. Adjust as needed.';
+    lockPriceInputs(false);
+    filterMaterialFields();
+    return;
+  }
+  const s=suppliers[parseInt(idx)];selectedSupplier=s;
+  const icon=CAT_ICONS[s.category]||'';
+  document.getElementById('supIcon').textContent=icon;
+  document.getElementById('supName').textContent=s.name;
+  document.getElementById('supMeta').textContent=(s.location||'')+(s.category?' · '+s.category:'');
+  infoBox.style.display='block';
+  const covered=[],missing=[];
+  if(s.materials&&s.materials.length){
+    Object.entries(MAT_MAP).forEach(([id,info])=>{
+      const match=s.materials.find(m=>info.keys.some(k=>m.name.toLowerCase().includes(k)));
+      if(match&&parseFloat(match.price)>0){const el=document.getElementById(id);if(el)el.value=parseFloat(match.price);supplierAvailMap[id]=true;covered.push(info.label);}
+      else{supplierAvailMap[id]=false;missing.push(info.label);}
+    });
+  }else{Object.keys(MAT_MAP).forEach(id=>{supplierAvailMap[id]=false;missing.push(MAT_MAP[id].label);});}
+  const total=Object.keys(MAT_MAP).length;
+  document.getElementById('supAvailNote').innerHTML=` <strong>${covered.length}/${total}</strong> materials from this supplier`+(missing.length?`<br> Not listed: <em>${missing.join(', ')}</em>`:'');
+  priceNote.innerHTML=`Prices from <strong>${s.name}</strong> — read only.`;
+  lockPriceInputs(true);
+  filterMaterialFields();
+}
+
+checkLogin();
+populateSupplierSelect();
+
+//  SAVED ESTIMATES VIEW 
+function initSavedView(){
+  const params=new URLSearchParams(window.location.search);
+  if(params.get('view')!=='saved') return;
+
+  // Hide estimator UI, show saved view
+  document.getElementById('savedView').style.display='block';
+  document.querySelector('nav').style.display='none';
+  document.querySelector('.page-top') && (document.querySelector('.page-top').style.display='none');
+  document.getElementById('stepsBar').style.display='none';
+  document.querySelector('main').style.display='none';
+  document.getElementById('bottomNav').style.display='none';
+
+  // Add nav inside saved view
+  const sh=document.querySelector('.saved-header');
+  const backLink=document.createElement('a');
+  backLink.href='index.html';
+  backLink.style.cssText='display:inline-flex;align-items:center;gap:6px;color:rgba(255,255,255,0.65);font-size:13px;text-decoration:none;margin-bottom:14px;';
+  backLink.innerHTML='← Back to Home';
+  sh.prepend(backLink);
+
+  renderSavedList();
+}
+
+function renderSavedList(){
+  const key='costruct_estimates_'+(currentUser?currentUser.email:'guest');
+  const saved=JSON.parse(localStorage.getItem(key)||'[]');
+  const list=document.getElementById('estList');
+  if(!saved.length){
+    list.innerHTML=`<div class="empty"><div class="ico" style="font-size:44px;margin-bottom:12px">—</div><p>No saved estimates yet.<br>Complete an estimation and tap <strong>Save</strong>.</p></div>`;
+    return;
+  }
+  list.innerHTML=saved.map((e,i)=>`
+    <div class="est-card">
+      <div class="est-card-head" onclick="toggleEstBody(${e.id})">
+        <div>
+          <div class="est-name">${e.name}</div>
+          <div class="est-meta"> ${e.floors} floor(s) &nbsp;·&nbsp;  ${e.area} m²${e.supplier?' &nbsp;·&nbsp;  '+e.supplier:''}<br> ${e.savedAt}</div>
+        </div>
+        <div class="est-total">${e.total}</div>
+      </div>
+      <div class="est-body" id="estBody_${e.id}">
+        ${e.breakdown}
+        <button class="est-del-btn" onclick="deleteEst(${e.id})"> Delete this estimate</button>
+      </div>
+    </div>`).join('');
+}
+
+function toggleEstBody(id){
+  const el=document.getElementById('estBody_'+id);
+  if(el) el.classList.toggle('open');
+}
+
+function deleteEst(id){
+  if(!confirm('Delete this estimate?')) return;
+  const key='costruct_estimates_'+(currentUser?currentUser.email:'guest');
+  let saved=JSON.parse(localStorage.getItem(key)||'[]');
+  saved=saved.filter(e=>e.id!==id);
+  localStorage.setItem(key,JSON.stringify(saved));
+  renderSavedList();
+}
+
+initSavedView();
+</script>
+</body>
+</html>
