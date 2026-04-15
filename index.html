@@ -243,9 +243,8 @@ footer strong{color:rgba(255,255,255,0.8)}
   <div class="logo">CO<span>S</span>Truct</div>
   <ul id="navLinks" style="display:none">
     <li><a href="index.html">Home</a></li>
-    <li><a href="#" onclick="checkAuth('estimation.html')">Estimation</a></li>
+    <li><a href="#" onclick="checkAuth('estimation.html?view=saved')">View Estimated Materials</a></li>
     <li><a href="#" onclick="checkAuth('suppliers.html')">Suppliers</a></li>
-    <li><a href="#about">About</a></li>
   </ul>
   <div class="nav-right">
     <a href="login.html" class="login-btn" id="loginBtn" style="display:none">Login</a>
@@ -267,7 +266,8 @@ footer strong{color:rgba(255,255,255,0.8)}
   <div class="sb-menu">
     <div class="sb-item" onclick="location.href='#'">Profile</div>
     <div class="sb-item" onclick="location.href='#'">Settings</div>
-    <div class="sb-item" id="adminItem" style="display:none" onclick="location.href='admin.html'"> Admin Dashboard</div>
+    <div class="sb-item" onclick="location.href='#about';toggleSidebar()">About</div>
+    <div class="sb-item" id="adminItem" style="display:none" onclick="location.href='admin.html'">Admin Dashboard</div>
   </div>
   <div class="sb-foot">
     <button class="logout-btn" onclick="doLogout()">Logout</button>
@@ -283,8 +283,7 @@ footer strong{color:rgba(255,255,255,0.8)}
     <h1>Real-Time <em>Material Quantity</em> & Cost Estimation</h1>
     <p>Compute material quantities instantly and access up-to-date pricing from local suppliers in the Partido Area.</p>
     <div class="hero-btns" id="heroBtns">
-      <button class="hero-btn-primary" onclick="startSurvey()">Start Estimating</button>
-      <button class="hero-btn-secondary" onclick="checkAuth('suppliers.html')">Browse Suppliers</button>
+      <button class="hero-btn-primary" onclick="checkAuth('estimation.html')">Start Estimating</button>
     </div>
     <div class="hero-stats">
       <div class="stat"><div class="num">4+</div><div class="lbl">Local Suppliers</div></div>
@@ -382,10 +381,13 @@ function init() {
     document.getElementById('sbEmail').textContent = currentUser.email;
     document.querySelector('.sb-avatar').textContent = (currentUser.name || 'U').charAt(0).toUpperCase();
     if (currentUser.role === 'supplier') document.getElementById('adminItem').style.display = 'flex';
-    // Swap hero buttons for logged-in users
+    // Logged in: View Estimated Materials (primary) only
     document.getElementById('heroBtns').innerHTML =
-      `<button class="hero-btn-primary" onclick="location.href='estimation.html'">View Estimated Materials</button>`;
+      `<button class="hero-btn-primary" onclick="location.href='estimation.html'">Start Estimation</button>`;
   } else {
+    // Guest: Start Estimating (primary) only
+    document.getElementById('heroBtns').innerHTML =
+      `<button class="hero-btn-primary" onclick="startSurvey()">Start Estimating</button>`;
     // Guest — center logo, hide nav links and burger, show subtle login btn
     document.getElementById('navLinks').style.display = 'none';
     document.getElementById('burgerBtn').style.display = 'none';

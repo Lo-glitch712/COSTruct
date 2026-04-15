@@ -85,7 +85,7 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);min-height:
   <div class="left">
     <div class="left-bg"></div>
     <div class="left-bg2"></div>
-    <div class="logo">CO<span>S</span>truct</div>
+    <div class="logo">CO<span>S</span>Truct</div>
     <div class="left-mid">
       <h2>Build smarter.<br>Estimate <em>faster.</em></h2>
       <p>Real-time material quantity and cost estimation for construction projects in the Partido Area.</p>
@@ -149,7 +149,12 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);min-height:
         </div>
         <div class="field"><label>Full Name</label><input type="text" id="regName" required placeholder="Juan dela Cruz"></div>
         <div class="field"><label>Email Address</label><input type="email" id="regEmail" required placeholder="you@example.com"></div>
-        <div class="field"><label>Password</label><input type="password" id="regPw" required placeholder="min 6 characters"></div>
+        <div class="field"><label>Contact Number</label><input type="tel" id="regContact" required placeholder="e.g. 09XX XXX XXXX"></div>
+        <div class="field"><label>House Address</label><input type="text" id="regAddress" required placeholder="House No., Street, Barangay, Municipality"></div>
+        <div class="field-row">
+          <div class="field"><label>Password</label><input type="password" id="regPw" required placeholder="min 6 characters"></div>
+          <div class="field"><label>Confirm Password</label><input type="password" id="regPwConfirm" required placeholder="re-enter password"></div>
+        </div>
         <div id="supFields" style="display:none">
           <div class="supplier-fields">
             <div class="supplier-fields-label">Store / Business Info</div>
@@ -227,18 +232,23 @@ function doRegister(e) {
   e.preventDefault();
   const name = document.getElementById('regName').value;
   const email = document.getElementById('regEmail').value;
+  const contact = document.getElementById('regContact').value;
+  const address = document.getElementById('regAddress').value;
   const pw = document.getElementById('regPw').value;
+  const pwConfirm = document.getElementById('regPwConfirm').value;
   const role = document.querySelector('input[name="role"]:checked').value;
-  if (!name||!email||!pw) return showAlert('regAlert','Please fill all fields.','error');
+  if (!name||!email||!contact||!address||!pw||!pwConfirm) return showAlert('regAlert','Please fill all fields.','error');
+  if (pw.length < 6) return showAlert('regAlert','Password must be at least 6 characters.','error');
+  if (pw !== pwConfirm) return showAlert('regAlert','Passwords do not match. Please try again.','error');
   const users = JSON.parse(localStorage.getItem('registeredUsers')) || [];
   if (users.some(u => u.email === email)) return showAlert('regAlert','Email already registered.','error');
-  let userData = {name,email,password:pw,role};
+  let userData = {name,email,password:pw,contact,address,role};
   if (role === 'supplier') {
     const storeName = document.getElementById('storeName').value;
     const cat = document.getElementById('storeCategory').value;
     const loc = document.getElementById('storeLoc').value;
     if (!storeName) return showAlert('regAlert','Please enter your business name.','error');
-    userData = {...userData, name: storeName, ownerName: name, category: cat, location: loc, contact: email, since: new Date().getFullYear().toString(), delivery: 'Available', rating: 0, materials: [], prices: {}};
+    userData = {...userData, name: storeName, ownerName: name, category: cat, location: loc, contact: contact, address: address, since: new Date().getFullYear().toString(), delivery: 'Available', rating: 0, materials: [], prices: {}};
     const sups = JSON.parse(localStorage.getItem('registeredSuppliers')) || [];
     sups.push(userData);
     localStorage.setItem('registeredSuppliers', JSON.stringify(sups));

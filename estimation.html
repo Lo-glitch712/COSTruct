@@ -132,35 +132,72 @@ main{padding:16px 16px 100px;max-width:600px;margin:0 auto}
 .badge-green{background:var(--g50);color:var(--g700)}
 
 /* SAVED ESTIMATES VIEW */
-#savedView{display:none;padding-bottom:40px}
-.saved-header{background:linear-gradient(135deg,var(--g900),var(--g800));color:#fff;padding:28px 20px 20px;margin-top:60px}
-.saved-header h1{font-family:'Fraunces',serif;font-size:22px;font-weight:800;letter-spacing:-.5px}
-.saved-header p{font-size:13px;color:rgba(255,255,255,0.6);margin-top:3px}
-.saved-header .new-btn{display:inline-flex;align-items:center;gap:6px;margin-top:14px;padding:9px 18px;background:var(--g600);color:#fff;border:none;border-radius:10px;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer;text-decoration:none}
-.saved-header .new-btn:hover{background:var(--g400)}
-.est-list{max-width:600px;margin:0 auto;padding:16px 16px 40px}
-.est-card{background:var(--card);border-radius:var(--r-lg);border:1px solid var(--border);margin-bottom:14px;overflow:hidden}
-.est-card-head{padding:16px 18px;display:flex;justify-content:space-between;align-items:flex-start;gap:10px;cursor:pointer}
-.est-card-head:hover{background:var(--g50)}
-.est-name{font-size:15px;font-weight:700;color:var(--g900)}
-.est-meta{font-size:12px;color:var(--ink3);margin-top:3px}
-.est-total{font-family:'Fraunces',serif;font-size:18px;font-weight:800;color:var(--g800);white-space:nowrap}
-.est-body{display:none;border-top:1px solid var(--border);padding:14px 18px;background:var(--bg)}
+#savedView{display:none;min-height:100vh;background:var(--bg)}
+.sv-nav{position:fixed;top:0;left:0;right:0;z-index:200;background:var(--g900);height:60px;display:flex;align-items:center;justify-content:space-between;padding:0 24px;border-bottom:1px solid rgba(255,255,255,0.07)}
+.sv-nav .logo{font-family:'Fraunces',serif;font-size:20px;color:#fff;font-weight:700;letter-spacing:-.3px}
+.sv-nav .logo span{color:var(--g200)}
+.sv-nav-back{display:flex;align-items:center;gap:6px;color:rgba(255,255,255,0.65);font-size:13px;font-weight:500;text-decoration:none;transition:.2s}
+.sv-nav-back:hover{color:#fff}
+.sv-hero{background:linear-gradient(135deg,var(--g900) 0%,var(--g800) 100%);padding:80px 24px 48px;position:relative;overflow:hidden;margin-top:60px}
+.sv-hero-grid{position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.03) 1px,transparent 1px);background-size:40px 40px;pointer-events:none}
+.sv-hero-inner{max-width:900px;margin:0 auto;position:relative;z-index:1;display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:20px}
+.sv-hero h1{font-family:'Fraunces',serif;font-size:clamp(24px,4vw,36px);font-weight:800;color:#fff;letter-spacing:-.5px;margin-bottom:6px}
+.sv-hero p{font-size:14px;color:rgba(255,255,255,0.55)}
+.sv-new-btn{display:inline-flex;align-items:center;gap:8px;padding:12px 22px;background:var(--g600);color:#fff;border:none;border-radius:12px;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer;text-decoration:none;transition:.2s;white-space:nowrap;border:1px solid rgba(255,255,255,0.15)}
+.sv-new-btn:hover{background:var(--g400);transform:translateY(-1px)}
+.sv-body{max-width:900px;margin:0 auto;padding:28px 20px 60px}
+.sv-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:28px}
+.sv-stat{background:var(--card);border-radius:var(--r-lg);border:1px solid var(--border);padding:16px 20px}
+.sv-stat-num{font-family:'Fraunces',serif;font-size:24px;font-weight:800;color:var(--g800)}
+.sv-stat-lbl{font-size:12px;color:var(--ink3);margin-top:3px;font-weight:500}
+.sv-section-label{font-size:11px;font-weight:700;color:var(--ink3);letter-spacing:.7px;text-transform:uppercase;margin-bottom:14px}
+.est-card{background:var(--card);border-radius:var(--r-lg);border:1px solid var(--border);margin-bottom:12px;overflow:hidden;transition:.2s}
+.est-card:hover{border-color:var(--g200);box-shadow:0 4px 20px rgba(10,61,43,0.09)}
+.est-card-head{padding:18px 20px;display:grid;grid-template-columns:auto 1fr auto;gap:14px;align-items:center;cursor:pointer}
+.est-icon{width:42px;height:42px;border-radius:10px;background:var(--g50);border:1px solid var(--g100);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:var(--g700);flex-shrink:0;letter-spacing:.3px}
+.est-name{font-size:15px;font-weight:700;color:var(--g900);margin-bottom:4px}
+.est-meta{font-size:12px;color:var(--ink3);display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.est-meta-dot{width:3px;height:3px;border-radius:50%;background:var(--border);flex-shrink:0}
+.est-right{text-align:right}
+.est-total{font-family:'Fraunces',serif;font-size:20px;font-weight:800;color:var(--g800);white-space:nowrap}
+.est-chevron{font-size:11px;color:var(--ink3);margin-top:4px;transition:.3s}
+.est-card.open .est-chevron{transform:rotate(180deg)}
+.est-body{display:none;border-top:1px solid var(--border);padding:16px 20px;background:var(--bg)}
 .est-body.open{display:block}
-.est-del-btn{margin-top:12px;padding:8px 16px;background:none;border:1.5px solid #f5c6cb;color:var(--red);border-radius:8px;font-size:13px;font-weight:600;cursor:pointer}
+.est-del-btn{margin-top:14px;padding:8px 16px;background:none;border:1.5px solid #f5c6cb;color:var(--red);border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;transition:.2s}
 .est-del-btn:hover{background:#fde8e8}
+.sv-empty{text-align:center;padding:60px 20px;background:var(--card);border-radius:var(--r-lg);border:1px solid var(--border)}
+.sv-empty-icon{width:56px;height:56px;border-radius:14px;background:var(--g50);border:1px solid var(--g100);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:var(--g700);margin:0 auto 16px}
+.sv-empty h3{font-family:'Fraunces',serif;font-size:18px;font-weight:700;color:var(--g900);margin-bottom:8px}
+.sv-empty p{font-size:14px;color:var(--ink3);line-height:1.6;margin-bottom:20px}
+.sv-empty-btn{display:inline-flex;padding:11px 22px;background:var(--g800);color:#fff;border:none;border-radius:10px;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer;text-decoration:none;transition:.2s}
+.sv-empty-btn:hover{background:var(--g600)}
+@media(max-width:600px){.sv-stats{grid-template-columns:1fr 1fr}.sv-hero-inner{flex-direction:column;align-items:flex-start}}
 </style>
 </head>
 <body>
 
 <!-- SAVED ESTIMATES VIEW -->
 <div id="savedView">
-  <div class="saved-header">
-    <h1>Saved Estimates</h1>
-    <p>Your previously saved material estimates</p>
-    <a href="estimation.html" class="new-btn">+ New Estimate</a>
+  <nav class="sv-nav">
+    <div class="logo">CO<span>S</span>Truct</div>
+    <a href="index.html" class="sv-nav-back">← Back to Home</a>
+  </nav>
+  <div class="sv-hero">
+    <div class="sv-hero-grid"></div>
+    <div class="sv-hero-inner">
+      <div>
+        <h1>Saved Estimates</h1>
+        <p>Your previously saved material estimates</p>
+      </div>
+      <a href="estimation.html" class="sv-new-btn">+ New Estimate</a>
+    </div>
   </div>
-  <div class="est-list" id="estList"></div>
+  <div class="sv-body">
+    <div class="sv-stats" id="svStats"></div>
+    <div class="sv-section-label">All Estimates</div>
+    <div id="estList"></div>
+  </div>
 </div>
 
 <nav>
@@ -945,14 +982,6 @@ function initSavedView(){
   document.querySelector('main').style.display='none';
   document.getElementById('bottomNav').style.display='none';
 
-  // Add nav inside saved view
-  const sh=document.querySelector('.saved-header');
-  const backLink=document.createElement('a');
-  backLink.href='index.html';
-  backLink.style.cssText='display:inline-flex;align-items:center;gap:6px;color:rgba(255,255,255,0.65);font-size:13px;text-decoration:none;margin-bottom:14px;';
-  backLink.innerHTML='← Back to Home';
-  sh.prepend(backLink);
-
   renderSavedList();
 }
 
@@ -960,29 +989,57 @@ function renderSavedList(){
   const key='costruct_estimates_'+(currentUser?currentUser.email:'guest');
   const saved=JSON.parse(localStorage.getItem(key)||'[]');
   const list=document.getElementById('estList');
+
+  // Stats
+  const totalCost=saved.reduce((s,e)=>s+parseFloat((e.total||'0').replace(/[^\d.]/g,'')),0);
+  const totalFloors=saved.reduce((s,e)=>s+(e.floors||0),0);
+  document.getElementById('svStats').innerHTML=`
+    <div class="sv-stat"><div class="sv-stat-num">${saved.length}</div><div class="sv-stat-lbl">Saved Estimates</div></div>
+    <div class="sv-stat"><div class="sv-stat-num">${totalFloors}</div><div class="sv-stat-lbl">Total Floors</div></div>
+    <div class="sv-stat"><div class="sv-stat-num">₱${totalCost.toLocaleString('en-PH',{minimumFractionDigits:0,maximumFractionDigits:0})}</div><div class="sv-stat-lbl">Combined Cost</div></div>`;
+
   if(!saved.length){
-    list.innerHTML=`<div class="empty"><div class="ico" style="font-size:44px;margin-bottom:12px">—</div><p>No saved estimates yet.<br>Complete an estimation and tap <strong>Save</strong>.</p></div>`;
+    list.innerHTML=`<div class="sv-empty">
+      <div class="sv-empty-icon">EST</div>
+      <h3>No Estimates Yet</h3>
+      <p>Complete an estimation and tap <strong>Save</strong> to store it here.</p>
+      <a href="estimation.html" class="sv-empty-btn">+ Create First Estimate</a>
+    </div>`;
     return;
   }
-  list.innerHTML=saved.map((e,i)=>`
-    <div class="est-card">
+
+  list.innerHTML=saved.map((e,i)=>{
+    const initials=(e.name||'?').split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,3);
+    const metaParts=[
+      e.floors+' floor(s)',
+      e.area+' m²',
+      e.supplier||null,
+      e.savedAt
+    ].filter(Boolean);
+    return `<div class="est-card" id="estCard_${e.id}">
       <div class="est-card-head" onclick="toggleEstBody(${e.id})">
+        <div class="est-icon">${initials}</div>
         <div>
           <div class="est-name">${e.name}</div>
-          <div class="est-meta"> ${e.floors} floor(s) &nbsp;·&nbsp;  ${e.area} m²${e.supplier?' &nbsp;·&nbsp;  '+e.supplier:''}<br> ${e.savedAt}</div>
+          <div class="est-meta">${metaParts.map((p,i)=>i===0?p:`<span class="est-meta-dot"></span>${p}`).join('')}</div>
         </div>
-        <div class="est-total">${e.total}</div>
+        <div class="est-right">
+          <div class="est-total">${e.total}</div>
+          <div class="est-chevron">▼</div>
+        </div>
       </div>
       <div class="est-body" id="estBody_${e.id}">
         ${e.breakdown}
-        <button class="est-del-btn" onclick="deleteEst(${e.id})"> Delete this estimate</button>
+        <button class="est-del-btn" onclick="deleteEst(${e.id})">Delete this estimate</button>
       </div>
-    </div>`).join('');
+    </div>`;
+  }).join('');
 }
 
 function toggleEstBody(id){
   const el=document.getElementById('estBody_'+id);
-  if(el) el.classList.toggle('open');
+  const card=document.getElementById('estCard_'+id);
+  if(el){el.classList.toggle('open');card&&card.classList.toggle('open');}
 }
 
 function deleteEst(id){

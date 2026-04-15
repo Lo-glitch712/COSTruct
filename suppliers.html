@@ -79,12 +79,11 @@ select:focus{border-color:var(--g600)}
 </head>
 <body>
 <nav>
-  <div class="logo">CO<span>S</span>truct</div>
+  <div class="logo">CO<span>S</span>Truct</div>
   <ul>
     <li><a href="index.html">Home</a></li>
     <li><a href="estimation.html">Estimation</a></li>
     <li><a href="suppliers.html" class="active">Suppliers</a></li>
-    <li><a href="index.html#about">About</a></li>
   </ul>
   <div class="nav-right">
     <a href="login.html" class="login-btn" id="loginBtn">Login</a>
@@ -102,10 +101,10 @@ select:focus{border-color:var(--g600)}
     <div class="sb-email" id="sbEmail"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="a3d6d0c6d1e3c6cec2cacf8dc0ccce">[email&#160;protected]</a></div>
   </div>
   <div class="sb-menu">
-    
     <div class="sb-item">Profile</div>
     <div class="sb-item">Settings</div>
-    <div class="sb-item" id="adminItem" style="display:none" onclick="location.href='admin.html'"> Admin Dashboard</div>
+    <div class="sb-item" onclick="location.href='index.html#about'">About</div>
+    <div class="sb-item" id="adminItem" style="display:none" onclick="location.href='admin.html'">Admin Dashboard</div>
   </div>
   <div class="sb-foot"><button class="logout-btn" onclick="doLogout()">Logout</button></div>
 </div>
@@ -121,13 +120,6 @@ select:focus{border-color:var(--g600)}
         <span class="search-icon"></span>
         <input type="text" id="searchInput" placeholder="Search supplier name or location..." oninput="doFilter()">
       </div>
-      <select id="catSel" onchange="doFilter()">
-        <option value="all">All categories</option>
-        <option value="hardware">Hardware</option>
-        <option value="lumber">Lumber & wood</option>
-        <option value="construction">General construction</option>
-        <option value="cement">Cement & aggregates</option>
-      </select>
       <select id="locSel" onchange="doFilter()">
         <option value="all">All locations</option>
         <option value="Tigaon">Tigaon</option>
@@ -136,7 +128,6 @@ select:focus{border-color:var(--g600)}
         <option value="Lagonoy">Lagonoy</option>
       </select>
     </div>
-    <div class="chips" id="chips"></div>
   </div>
   <div class="results-bar"><p id="resultCount"></p></div>
   <div class="grid" id="grid"></div>
@@ -147,23 +138,14 @@ const ICONS={hardware:'HW',lumber:'LB',construction:'GC',cement:'CA'};
 function loadAll(){
   return JSON.parse(localStorage.getItem('registeredSuppliers'))||[];
 }
-function buildChips(){
-  const cats=['Hardware','Lumber & wood','General construction','Cement & aggregates'];
-  document.getElementById('chips').innerHTML=cats.map(c=>`<div class="chip" data-val="${c.toLowerCase()}" onclick="toggleChip(this)">${c}</div>`).join('');
-}
-function toggleChip(el){el.classList.toggle('on');doFilter();}
 function doFilter(){
   const q=document.getElementById('searchInput').value.toLowerCase();
-  const cat=document.getElementById('catSel').value;
   const loc=document.getElementById('locSel').value;
-  const chips=[...document.querySelectorAll('.chip.on')].map(c=>c.dataset.val);
   const all=loadAll();
   const f=all.filter(s=>{
     const mq=!q||s.name.toLowerCase().includes(q)||s.location.toLowerCase().includes(q);
-    const mc=cat==='all'||s.category===cat;
     const ml=loc==='all'||s.location===loc;
-    const mch=chips.length===0||chips.includes(s.category);
-    return mq&&mc&&ml&&mch;
+    return mq&&ml;
   });
   renderGrid(f,true);
   const c=document.getElementById('resultCount');
@@ -197,7 +179,6 @@ function init(){
   const d=localStorage.getItem('currentUser');
   if(d){currentUser=JSON.parse(d);document.getElementById('loginBtn').style.display='none';document.getElementById('burgerBtn').style.display='flex';document.getElementById('sbName').textContent=currentUser.name;document.getElementById('sbEmail').textContent=currentUser.email;document.querySelector('.sb-avatar').textContent=(currentUser.name||'U').charAt(0).toUpperCase();if(currentUser.role==='supplier')document.getElementById('adminItem').style.display='flex';}
 }
-buildChips();
 init();
 const allSuppliers=loadAll();
 document.getElementById('resultCount').textContent=allSuppliers.length?'Showing all '+allSuppliers.length+' suppliers':'';
