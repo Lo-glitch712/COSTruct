@@ -382,7 +382,7 @@ main{padding:16px 16px 100px;max-width:600px;margin:0 auto}
 
   <!-- ── FLOORING AREA ── -->
   <div class="card">
-    <div class="card-title"><span class="ct-icon">D</span> Flooring</div>
+    <div class="card-title"><span class="ct-icon">D</span> Ground Floor Slab</div>
     <div class="info-note">Enter flooring dimensions. Area = Length × Width. Adding flooring is optional.</div>
 
     <!-- Dimension sub-section -->
@@ -399,9 +399,9 @@ main{padding:16px 16px 100px;max-width:600px;margin:0 auto}
     </div>
 
     <!-- Flooring list (optional) -->
-    <div style="font-size:11px;font-weight:700;color:var(--g700);text-transform:uppercase;letter-spacing:.5px;margin:14px 0 8px;padding-top:10px;border-top:1px solid var(--border)">Flooring <span style="font-weight:500;text-transform:none;letter-spacing:0;color:var(--ink3)">(optional)</span></div>
+    <div style="font-size:11px;font-weight:700;color:var(--g700);text-transform:uppercase;letter-spacing:.5px;margin:14px 0 8px;padding-top:10px;border-top:1px solid var(--border)">Ground Floor Slab <span style="font-weight:500;text-transform:none;letter-spacing:0;color:var(--ink3)">(optional)</span></div>
     <div class="floors-list" id="floorsList"></div>
-    <button class="add-floor-btn" onclick="addFloor()">+ Add Flooring</button>
+    <button class="add-floor-btn" onclick="addFloor()">+ Add Ground Floor Slab</button>
   </div>
 
   <!-- ── SLAB ── -->
@@ -421,6 +421,11 @@ main{padding:16px 16px 100px;max-width:600px;margin:0 auto}
       <div class="rec-row"><span class="rec-label">Slab Area</span><span class="rec-val" id="slabAreaVal">— m²</span></div>
       <div class="rec-row"><span class="rec-label">Slab Volume</span><span class="rec-val" id="slabVolVal">— m³</span></div>
     </div>
+
+    <!-- Slabs list (optional) -->
+    <div style="font-size:11px;font-weight:700;color:var(--g700);text-transform:uppercase;letter-spacing:.5px;margin:14px 0 8px;padding-top:10px;border-top:1px solid var(--border)">Additional Slabs <span style="font-weight:500;text-transform:none;letter-spacing:0;color:var(--ink3)">(optional)</span></div>
+    <div class="floors-list" id="slabsList"></div>
+    <button class="add-floor-btn" onclick="addSlab()">+ Add Slab</button>
   </div>
 
   <!-- ── STRUCTURAL ELEMENTS ── -->
@@ -475,7 +480,6 @@ main{padding:16px 16px 100px;max-width:600px;margin:0 auto}
       <div id="rSupplierTag" style="display:none;margin-top:8px;background:rgba(255,255,255,0.12);border-radius:8px;padding:5px 12px;font-size:12px;font-weight:600"><span id="rSupplierName"></span></div>
     </div>
     <div class="result-chips">
-      <div class="chip-r"><div class="cv" id="rVol">0</div><div class="cl">Concrete m³</div></div>
       <div class="chip-r"><div class="cv" id="rSand">0</div><div class="cl">Sand m³</div></div>
       <div class="chip-r"><div class="cv" id="rGravel">0</div><div class="cl">Gravel m³</div></div>
     </div>
@@ -496,11 +500,11 @@ main{padding:16px 16px 100px;max-width:600px;margin:0 auto}
 
 <div class="bottom-nav" id="bottomNav">
   <button class="btn btn-ghost" id="prevBtn" onclick="prevStep()" style="display:none">←</button>
-  <button class="btn btn-primary" id="nextBtn" onclick="nextStep()">Next →</button>
+  <button class="btn btn-primary" id="nextBtn">Next →</button>
 </div>
 
 <script>
-let currentStep=0,floors=[],currentUser=null;
+let currentStep=0,floors=[],slabEntries=[],currentUser=null;
 const totalSteps=3;
 
 function checkLogin(){
@@ -624,6 +628,53 @@ function renderFloors(){
         </div>
       </div>
       ${area?`<div style="font-size:11px;color:var(--g700);font-weight:600">Slab Vol: ${vol} m³ · Area: ${area} m²</div>`:''}
+    </div>`;
+  }).join('');
+}
+
+// ── SLABS ──
+let slabId=0;
+function addSlab(){
+  const id=++slabId;
+  slabEntries.push({id,num:slabEntries.length+1,length:'',width:'',thickness:0.1});
+  renderSlabs();
+  setTimeout(()=>{const el=document.getElementById('slab_len_'+id);if(el)el.focus();},50);
+}
+function removeSlab(id){slabEntries=slabEntries.filter(s=>s.id!==id);renderSlabs();}
+function updateSlab(id,field,val){const s=slabEntries.find(s=>s.id===id);if(s)s[field]=parseFloat(val)||0;}
+function renderSlabs(){
+  const el=document.getElementById('slabsList');
+  if(!el)return;
+  if(!slabEntries.length){el.innerHTML='<div style="font-size:13px;color:var(--ink3);padding:4px 0;">No additional slabs added yet.</div>';return;}
+  el.innerHTML=slabEntries.map((s,i)=>{
+    const area=(s.length&&s.width)?(s.length*s.width).toFixed(1):null;
+    const vol=(area&&s.thickness)?(s.length*s.width*s.thickness).toFixed(3):null;
+    return`<div class="floor-row" style="flex-direction:column;align-items:stretch;gap:10px">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div class="fl-label">Slab ${s.num}</div>
+        <button class="fl-del" onclick="removeSlab(${s.id})">✕</button>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
+        <div>
+          <div style="font-size:10px;font-weight:700;color:var(--ink3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px">Length (m)</div>
+          <input id="slab_len_${s.id}" type="number" value="${s.length||''}" placeholder="10" min="0" step="0.1" inputmode="decimal"
+            oninput="updateSlab(${s.id},'length',this.value)"
+            style="width:100%;padding:9px 10px;border:1.5px solid var(--border);border-radius:9px;font-family:inherit;font-size:14px;color:var(--ink);background:#fff;outline:none">
+        </div>
+        <div>
+          <div style="font-size:10px;font-weight:700;color:var(--ink3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px">Width (m)</div>
+          <input id="slab_wid_${s.id}" type="number" value="${s.width||''}" placeholder="8" min="0" step="0.1" inputmode="decimal"
+            oninput="updateSlab(${s.id},'width',this.value)"
+            style="width:100%;padding:9px 10px;border:1.5px solid var(--border);border-radius:9px;font-family:inherit;font-size:14px;color:var(--ink);background:#fff;outline:none">
+        </div>
+        <div>
+          <div style="font-size:10px;font-weight:700;color:var(--ink3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px">Thickness (m)</div>
+          <input id="slab_thk_${s.id}" type="number" value="${s.thickness||0.1}" placeholder="0.1" min="0" step="0.01" inputmode="decimal"
+            oninput="updateSlab(${s.id},'thickness',this.value)"
+            style="width:100%;padding:9px 10px;border:1.5px solid var(--border);border-radius:9px;font-family:inherit;font-size:14px;color:var(--ink);background:#fff;outline:none">
+        </div>
+      </div>
+      ${area?`<div style="font-size:11px;color:var(--g700);font-weight:600">Volume: ${vol} m³ · Area: ${area} m²</div>`:''}
     </div>`;
   }).join('');
 }
@@ -769,8 +820,8 @@ function goStep(n){
   document.querySelectorAll('.step-tab').forEach((t,i)=>{t.classList.toggle('active',i===n);t.classList.toggle('done',i<n);});
   document.getElementById('prevBtn').style.display=n>0?'block':'none';
   const nb=document.getElementById('nextBtn');
-  if(n===totalSteps-1){nb.textContent=' Calculate';nb.className='btn btn-accent';nb.onclick=calculate;}
-  else{nb.textContent='Next →';nb.className='btn btn-primary';nb.onclick=nextStep;}
+  if(n===totalSteps-1){nb.textContent=' Calculate';nb.className='btn btn-accent';nb.onclick=()=>calculate();}
+  else{nb.textContent='Next →';nb.className='btn btn-primary';nb.onclick=()=>nextStep();}
   window.scrollTo(0,0);
 }
 function nextStep(){if(!validateStep(currentStep))return;if(currentStep<totalSteps-1)goStep(currentStep+1);}
@@ -780,8 +831,10 @@ function validateStep(s){
     if(!selectedSupplier){alert('Please select a supplier to use their material prices.');return false;}
   }
   if(s===1){
-    const badFloor=floors.find(f=>!f.length||!f.width);
-    if(badFloor){alert('Please enter length and width for '+badFloor.label+'.');return false;}
+    if(floors.length>0){
+      const incompletFloor=floors.find(f=>!f.length||!f.width);
+      if(incompletFloor){alert('Please enter length and width for '+incompletFloor.label+'.');return false;}
+    }
   }
   return true;
 }
@@ -789,7 +842,6 @@ function validateStep(s){
 
 function calculate(){
   if(!validateStep(0))return;
-  if(!validateStep(1))return;
 
   const tileSize=document.getElementById('tileSize').value;
   const inclRoof=document.getElementById('roofing').value==='yes';
@@ -821,12 +873,12 @@ function calculate(){
   function catCost(list){return list.reduce((s,m)=>s+(m.cost||0),0);}
 
   // ── Totals across all floors ──
-  let totalArea=0,totalFoundVol=0,totalSlabVol=0,totalNails=0,totalS16=0,totalTiles=0,totalGiSheets=0,totalLumber=0;
+  let totalArea=0,totalFoundVol=0,groundFloorSlabVol=0,additionalSlabsVol=0,totalNails=0,totalS16=0,totalTiles=0,totalGiSheets=0,totalLumber=0;
   floors.forEach((f,idx)=>{
     const area=f.length*f.width;
     totalArea+=area;
     totalFoundVol+=area*1.1*0.15;
-    totalSlabVol+=area*(f.slabThick||0.1);
+    groundFloorSlabVol+=area*(f.slabThick||0.1);  // Ground floor slabs only
     totalNails+=Math.ceil(area/10);
     totalS16+=Math.ceil(area/2);
     if(tileSize!=='none'){
@@ -837,6 +889,14 @@ function calculate(){
     }
     if(inclRoof&&idx===floors.length-1){totalGiSheets+=Math.ceil((area*1.2)/2.5);totalLumber+=Math.ceil(area/2);}
   });
+  
+  // Add volumes from additional slabs (tracked separately)
+  slabEntries.forEach(s=>{
+    const vol=(s.length||0)*(s.width||0)*(s.thickness||0);
+    additionalSlabsVol+=vol;
+  });
+  
+  const totalSlabVol=groundFloorSlabVol+additionalSlabsVol;  // For other calculations
 
   // ── Structural totals ──
   const totalColVol=columnEntries.reduce((s,c)=>s+c.qty*(c.dimW/1000)*(c.dimH/1000)*c.height,0);
@@ -857,24 +917,31 @@ function calculate(){
   });
 
   // ────────────────────────────────────────────
-  // SECTION 1: SLAB (Foundation + Slab concrete)
+  // SECTION 1: SLAB (Cement only - for ground floor + additional slabs)
   // ────────────────────────────────────────────
   const sec1Mats=[];
   if(floors.length){
-    const slabTotalVol=totalFoundVol+totalSlabVol;
-    const slabCementBags=Math.ceil(slabTotalVol*9);
-    const slabSand=+(slabTotalVol*0.5).toFixed(2);
-    const slabGravel=+(slabTotalVol*1.0).toFixed(2);
+    // Ground floor cement bags (multiplier 7.5)
+    const groundFloorCementBags=Math.ceil(groundFloorSlabVol*7.5);
+    // Additional slabs cement bags (multiplier 9.0)
+    const additionalSlabsCementBags=additionalSlabsVol>0?Math.ceil(additionalSlabsVol*9.0):0;
+    const totalCementBags=groundFloorCementBags+additionalSlabsCementBags;
+    
     if(cementType==='portland'||cementType==='both'){
-      const bags=cementType==='both'?Math.ceil(slabCementBags*0.7):slabCementBags;
+      const bags=cementType==='both'?Math.ceil(totalCementBags*0.7):totalCementBags;
       sec1Mats.push({name:'Portland Cement (40kg)',qty:bags,unit:'bags',cost:bags*portlandPrice,field:'pCementPortland'});
     }
     if(cementType==='pozzolan'||cementType==='both'){
-      const bags=cementType==='both'?Math.ceil(slabCementBags*0.3):slabCementBags;
+      const bags=cementType==='both'?Math.ceil(totalCementBags*0.3):totalCementBags;
       sec1Mats.push({name:'Pozzolan Cement (40kg)',qty:bags,unit:'bags',cost:bags*pozzolanPrice,field:'pCementPozzolan'});
     }
-    sec1Mats.push({name:'Sand',qty:slabSand,unit:'m³',cost:slabSand*P.sand,field:'pSand'});
-    sec1Mats.push({name:'Gravel',qty:slabGravel,unit:'m³',cost:slabGravel*P.gravel,field:'pGravel'});
+    // Sand and Gravel for additional slabs
+    if(additionalSlabsVol>0){
+      const addlSand=+(additionalSlabsVol*0.5).toFixed(2);
+      const addlGravel=+(additionalSlabsVol*1.0).toFixed(2);
+      sec1Mats.push({name:'Sand',qty:addlSand,unit:'m³',cost:addlSand*P.sand,field:'pSand'});
+      sec1Mats.push({name:'Gravel',qty:addlGravel,unit:'m³',cost:addlGravel*P.gravel,field:'pGravel'});
+    }
     if(totalS16>0)sec1Mats.push({name:'Steel Bar 16mm',qty:totalS16,unit:'pcs',cost:totalS16*P.s16,field:'pSteel16'});
     if(totalNails>0)sec1Mats.push({name:'Assorted Nails',qty:totalNails,unit:'kg',cost:totalNails*P.nails,field:'pNails'});
     if(totalWireKg>0)sec1Mats.push({name:'Tie Wire',qty:totalWireKg,unit:'kg',cost:totalWireKg*P.wire,field:'pWire'});
@@ -883,10 +950,14 @@ function calculate(){
   const cost1=catCost(fSec1);
 
   // ────────────────────────────────────────────
-  // SECTION 2: FLOORING (supplier-available items only)
+  // SECTION 2: GROUND FLOOR SLAB (Sand, Gravel for ground floor + finishes)
   // ────────────────────────────────────────────
   const sec2Mats=[];
   if(floors.length){
+    const groundFloorSand=+(groundFloorSlabVol*0.5).toFixed(2);
+    const groundFloorGravel=+(groundFloorSlabVol*1.0).toFixed(2);
+    sec2Mats.push({name:'Sand',qty:groundFloorSand,unit:'m³',cost:groundFloorSand*P.sand,field:'pSand'});
+    sec2Mats.push({name:'Gravel',qty:groundFloorGravel,unit:'m³',cost:groundFloorGravel*P.gravel,field:'pGravel'});
     if(totalTiles>0){
       const tileLabel=tileSize==='60x60'?'Tiles 60×60 cm':tileSize==='30x30'?'Tiles 30×30 cm':'Tiles';
       sec2Mats.push({name:tileLabel,qty:totalTiles,unit:'pcs',cost:totalTiles*P.tile,field:'pTile'});
@@ -894,7 +965,6 @@ function calculate(){
     if(totalGiSheets>0)sec2Mats.push({name:'G.I. Roofing Sheets',qty:totalGiSheets,unit:'pcs',cost:totalGiSheets*P.gi,field:'pGi'});
     if(totalLumber>0)sec2Mats.push({name:'Coco Lumber 2×3',qty:totalLumber,unit:'pcs',cost:totalLumber*P.lumber,field:'pLumber'});
   }
-  // Flooring uses the same supplier-filter as the other sections
   const fSec2=filtered(sec2Mats);
   const cost2=catCost(fSec2);
 
@@ -992,29 +1062,39 @@ function calculate(){
   }
 
   const breakdownHTML=
-    catBlock('','FLOORING',fSec2.length?`(${fSec2.length} item${fSec2.length>1?'s':''} from supplier)`:'(supplier items only)',fSec2,cost2)+
+    catBlock('','GROUND FLOOR SLAB',fSec2.length?`(${fSec2.length} item${fSec2.length>1?'s':''} from supplier)`:'(supplier items only)',fSec2,cost2)+
     catBlock('','SLAB',floors.length?`(${totalArea.toFixed(1)} m\u00B2)`:'',fSec1,cost1)+
     catBlock('','STRUCTURAL ELEMENTS',totalColCount||totalBeamCount?`(${totalColCount} col \u00B7 ${totalBeamCount} beams)`:'',fSec3,cost3)+
     catBlock('','WALLS AND FINISHES',wallSummary.length?`(${wallSummary.length} section${wallSummary.length>1?'s':''})`:'',fSec4,cost4)+
     customMatHTML;
 
-  document.getElementById('rTotal').textContent='₱'+fmt(grandMaterialCost);
-  document.getElementById('rProjName').textContent=document.getElementById('projName').value||'Untitled Project';
-  const _results=document.getElementById('resultsContent');
-  _results.dataset.area=totalArea.toFixed(1);
-  _results.dataset.floors=floors.length;
-  document.getElementById('rVol').textContent=totalConcreteVol.toFixed(2);
-  document.getElementById('rSand').textContent=totalSand;
-  document.getElementById('rGravel').textContent=totalGravel;
-  document.getElementById('floorBreakdowns').innerHTML=breakdownHTML;
-  document.getElementById('rMatCost').textContent='₱'+fmt(grandMaterialCost);
-  document.getElementById('rTotalBottom').textContent='₱'+fmt(grandMaterialCost);
-  const supTag=document.getElementById('rSupplierTag');
-  if(selectedSupplier){supTag.style.display='inline-block';document.getElementById('rSupplierName').textContent=selectedSupplier.name;}
-  else{supTag.style.display='none';}
+  // Helper: safely set textContent only if element exists
+  const setText=(id,val)=>{const el=document.getElementById(id);if(el)el.textContent=val;};
+  const setHTML=(id,val)=>{const el=document.getElementById(id);if(el)el.innerHTML=val;};
 
-  document.getElementById('emptyResults').style.display='none';
-  document.getElementById('resultsContent').style.display='block';
+  setText('rTotal','₱'+fmt(grandMaterialCost));
+  const projNameEl=document.getElementById('projName');
+  setText('rProjName',(projNameEl&&projNameEl.value)||'Untitled Project');
+  const _results=document.getElementById('resultsContent');
+  if(_results){
+    _results.dataset.area=totalArea.toFixed(1);
+    _results.dataset.floors=floors.length;
+  }
+  setText('rVol',totalConcreteVol.toFixed(2));
+  setText('rSand',totalSand);
+  setText('rGravel',totalGravel);
+  setHTML('floorBreakdowns',breakdownHTML);
+  setText('rMatCost','₱'+fmt(grandMaterialCost));
+  setText('rTotalBottom','₱'+fmt(grandMaterialCost));
+  const supTag=document.getElementById('rSupplierTag');
+  if(supTag){
+    if(selectedSupplier){supTag.style.display='inline-block';setText('rSupplierName',selectedSupplier.name);}
+    else{supTag.style.display='none';}
+  }
+
+  const emptyR=document.getElementById('emptyResults');
+  if(emptyR)emptyR.style.display='none';
+  if(_results)_results.style.display='block';
   window.scrollTo(0,0);
 }
 
@@ -1216,10 +1296,60 @@ function selectSupplierByIdx(i){
 }
 
 checkLogin();
+
+// Initialize next button
+document.getElementById('nextBtn').onclick=()=>nextStep();
+
+// Initialize with sample suppliers if empty
+if(!JSON.parse(localStorage.getItem('registeredSuppliers')||'[]').length){
+  const sampleSuppliers=[
+    {
+      name:'Best Hardware & Supply',
+      email:'bestbuilding@example.com',
+      contact:'09123456789',
+      address:'Manila',
+      location:'Manila',
+      category:'Hardware',
+      materials:[
+        {name:'Portland Cement 40kg',price:295,unit:'bag'},
+        {name:'Pozzolan Cement 40kg',price:265,unit:'bag'},
+        {name:'Sand',price:1200,unit:'m³'},
+        {name:'Gravel',price:1500,unit:'m³'},
+        {name:'Steel Bar 10mm',price:350,unit:'pcs'},
+        {name:'Steel Bar 12mm',price:475,unit:'pcs'},
+        {name:'Steel Bar 16mm',price:850,unit:'pcs'},
+        {name:'CHB 4"',price:12,unit:'pcs'},
+        {name:'CHB 6"',price:16,unit:'pcs'},
+        {name:'GI Sheet',price:385,unit:'pcs'},
+        {name:'Nails',price:85,unit:'kg'},
+        {name:'Tie Wire',price:95,unit:'kg'}
+      ]
+    },
+    {
+      name:'Quality Builders Depot',
+      email:'quality@example.com',
+      contact:'09234567890',
+      address:'Quezon City',
+      location:'Quezon City',
+      category:'Construction',
+      materials:[
+        {name:'Portland Cement',price:300,unit:'bag'},
+        {name:'Sand',price:1100,unit:'m³'},
+        {name:'Gravel',price:1400,unit:'m³'},
+        {name:'Steel Bar 12mm',price:470,unit:'pcs'},
+        {name:'Steel Bar 16mm',price:840,unit:'pcs'},
+        {name:'CHB 4"',price:11,unit:'pcs'}
+      ]
+    }
+  ];
+  localStorage.setItem('registeredSuppliers',JSON.stringify(sampleSuppliers));
+}
+
 renderSupplierCards();
 renderColumns();
 renderBeams();
 renderWalls();
+renderSlabs();
 initFloors();
 
 //  SAVED ESTIMATES VIEW 
