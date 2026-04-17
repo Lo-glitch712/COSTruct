@@ -418,8 +418,8 @@ main{padding:16px 16px 100px;max-width:600px;margin:0 auto}
     </div>
     <div class="rec-box" id="slabAreaBox">
       <div class="rec-title">Slab Computation</div>
-      <div class="rec-row"><span class="rec-label">Slab Area</span><span class="rec-val" id="slabAreaVal">— m²</span></div>
-      <div class="rec-row"><span class="rec-label">Slab Volume</span><span class="rec-val" id="slabVolVal">— m³</span></div>
+      <div class="rec-row"><span class="rec-label">Slab Area</span><span class="rec-val" id="slabComputeAreaVal">— m²</span></div>
+      <div class="rec-row"><span class="rec-label">Slab Volume</span><span class="rec-val" id="slabComputeVolVal">— m³</span></div>
     </div>
 
     <!-- Slabs list (optional) -->
@@ -480,6 +480,7 @@ main{padding:16px 16px 100px;max-width:600px;margin:0 auto}
       <div id="rSupplierTag" style="display:none;margin-top:8px;background:rgba(255,255,255,0.12);border-radius:8px;padding:5px 12px;font-size:12px;font-weight:600"><span id="rSupplierName"></span></div>
     </div>
     <div class="result-chips">
+      <div class="chip-r"><div class="cv" id="rCement">0</div><div class="cl">Cement bags</div></div>
       <div class="chip-r"><div class="cv" id="rSand">0</div><div class="cl">Sand m³</div></div>
       <div class="chip-r"><div class="cv" id="rGravel">0</div><div class="cl">Gravel m³</div></div>
     </div>
@@ -547,8 +548,8 @@ function updateSlabSection(){
   const t=parseFloat(document.getElementById('sThick').value)||0;
   const area=l*w;
   const vol=area*t;
-  document.getElementById('slabAreaVal').textContent=area>0?area.toFixed(2)+' m²':'— m²';
-  document.getElementById('slabVolVal').textContent=vol>0?vol.toFixed(3)+' m³':'— m³';
+  document.getElementById('slabComputeAreaVal').textContent=area>0?area.toFixed(2)+' m²':'— m²';
+  document.getElementById('slabComputeVolVal').textContent=vol>0?vol.toFixed(3)+' m³':'— m³';
 }
 
 // Alias kept for backwards compatibility
@@ -771,7 +772,7 @@ function renderBeams(){
 let wallEntries=[],wallEntryId=0;
 function addWall(){
   const id=++wallEntryId;
-  wallEntries.push({id,type:'chb',length:0,width:0});
+  wallEntries.push({id,type:'chb',length:0,width:0,thickness:0.0125});
   renderWalls();
   setTimeout(()=>{const el=document.getElementById('wlen_'+id);if(el)el.focus();},50);
 }
@@ -782,8 +783,29 @@ function renderWalls(){
   if(!el)return;
   if(!wallEntries.length){el.innerHTML='<div style="font-size:13px;color:var(--ink3);padding:4px 0;">No walls added yet.</div>';return;}
   el.innerHTML=wallEntries.map(w=>{
-    const area=(parseFloat(w.length)||0)*(parseFloat(w.width)||0);
+    const L=parseFloat(w.length)||0;
+    const W=parseFloat(w.width)||0;
+    const area=L*W;
     const chbCount=w.type==='chb'?Math.ceil(area*12.5):0;
+
+    // Mortar: V = 0.0125 x W x L, TotalVol = V x 15
+    const mortarThick=parseFloat(w.thickness)||0.0125;
+    const mortarVol=+(mortarThick*W*L).toFixed(4);
+    const mortarTotalVol=+(mortarVol*15).toFixed(3);
+    const mortarCementBags=Math.ceil(mortarTotalVol*12);
+    const mortarSandM3=+(mortarTotalVol*1).toFixed(3);
+
+    // Plastering: A = L x W, Vol = A x 0.016
+    const plasterVol=+(area*0.016).toFixed(3);
+    const plasterCementBags=Math.ceil(plasterVol*12);
+    const plasterSandM3=+(plasterVol*1).toFixed(3);
+
+    const infoLine=w.type==='chb'
+      ?`Wall Area: ${area.toFixed(2)} m² · CHB: ${chbCount} pcs`
+      :w.type==='mortar'
+        ?`Area: ${area.toFixed(2)} m² · Vol: ${mortarVol} m³ · Total Vol: ${mortarTotalVol} m³ → Cement: ${mortarCementBags} bags · Sand: ${mortarSandM3} m³`
+        :`Area: ${area.toFixed(2)} m² · Vol: ${plasterVol} m³ → Cement: ${plasterCementBags} bags · Sand: ${plasterSandM3} m³`;
+
     return `
     <div style="background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:12px 14px">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
@@ -793,9 +815,9 @@ function renderWalls(){
       <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap">
         <button onclick="updateWallField(${w.id},'type','chb')" style="flex:1;min-width:70px;padding:8px;border:1.5px solid ${w.type==='chb'?'var(--g600)':'var(--border)'};border-radius:9px;background:${w.type==='chb'?'var(--g50)':'#fff'};color:${w.type==='chb'?'var(--g800)':'var(--ink3)'};font-family:inherit;font-size:13px;font-weight:700;cursor:pointer">CHB</button>
         <button onclick="updateWallField(${w.id},'type','mortar')" style="flex:1;min-width:70px;padding:8px;border:1.5px solid ${w.type==='mortar'?'var(--g600)':'var(--border)'};border-radius:9px;background:${w.type==='mortar'?'var(--g50)':'#fff'};color:${w.type==='mortar'?'var(--g800)':'var(--ink3)'};font-family:inherit;font-size:13px;font-weight:700;cursor:pointer">Mortar</button>
-        <button onclick="updateWallField(${w.id},'type','plaster')" style="flex:1;min-width:70px;padding:8px;border:1.5px solid ${w.type==='plaster'?'var(--g600)':'var(--border)'};border-radius:9px;background:${w.type==='plaster'?'var(--g50)':'#fff'};color:${w.type==='plaster'?'var(--g800)':'var(--ink3)'};font-family:inherit;font-size:13px;font-weight:700;cursor:pointer">Plaster</button>
+        <button onclick="updateWallField(${w.id},'type','plaster')" style="flex:1;min-width:70px;padding:8px;border:1.5px solid ${w.type==='plaster'?'var(--g600)':'var(--border)'};border-radius:9px;background:${w.type==='plaster'?'var(--g50)':'#fff'};color:${w.type==='plaster'?'var(--g800)':'var(--ink3)'};font-family:inherit;font-size:13px;font-weight:700;cursor:pointer">Plastering</button>
       </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
+      <div style="display:grid;grid-template-columns:${w.type==='mortar'?'1fr 1fr 1fr':'1fr 1fr'};gap:8px;margin-bottom:8px">
         <div>
           <div style="font-size:10px;font-weight:700;color:var(--ink3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px">Length (m)</div>
           <input id="wlen_${w.id}" type="number" value="${w.length||''}" placeholder="0" step="0.1" min="0" inputmode="decimal" oninput="updateWallField(${w.id},'length',this.value)" style="width:100%;padding:9px 10px;border:1.5px solid var(--border);border-radius:9px;font-family:inherit;font-size:14px;color:var(--ink);background:#fff;outline:none">
@@ -804,10 +826,12 @@ function renderWalls(){
           <div style="font-size:10px;font-weight:700;color:var(--ink3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px">Width (m)</div>
           <input type="number" value="${w.width||''}" placeholder="0" step="0.1" min="0" inputmode="decimal" oninput="updateWallField(${w.id},'width',this.value)" style="width:100%;padding:9px 10px;border:1.5px solid var(--border);border-radius:9px;font-family:inherit;font-size:14px;color:var(--ink);background:#fff;outline:none">
         </div>
+        ${w.type==='mortar'?`<div>
+          <div style="font-size:10px;font-weight:700;color:var(--ink3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px">Thickness (m)</div>
+          <input type="number" value="${w.thickness||0.0125}" placeholder="0.0125" step="0.001" min="0" inputmode="decimal" oninput="updateWallField(${w.id},'thickness',this.value)" style="width:100%;padding:9px 10px;border:1.5px solid var(--border);border-radius:9px;font-family:inherit;font-size:14px;color:var(--ink);background:#fff;outline:none">
+        </div>`:''}
       </div>
-      <div style="font-size:11px;color:var(--g700);font-weight:600">
-        Wall Area: ${area.toFixed(2)} m²${w.type==='chb'&&chbCount>0?' · '+chbCount+' pcs CHB':''}
-      </div>
+      <div style="font-size:11px;color:var(--g700);font-weight:600;line-height:1.6">${infoLine}</div>
     </div>`}).join('');
 }
 
@@ -868,6 +892,20 @@ function calculate(){
   function matRows(list){
     return list.map(m=>`<div class="mat-line"><span class="mn">${m.name}</span><span><span class="mq">${m.qty} ${m.unit}</span><span class="mc">₱${fmt(m.cost)}</span></span></div>`).join('');
   }
+  
+  // Nested/hierarchical rendering for walls section
+  function matRowsHierarchy(list){
+    return list.map(m=>{
+      if(m.isHeader){
+        return `<div class="mat-line" style="font-weight:600;padding:8px 0 4px 0;border-top:1px solid var(--border);margin-top:4px;padding-top:8px"><span class="mn">${m.name}</span></div>`;
+      } else if(m.indent){
+        return `<div class="mat-line" style="padding-left:20px"><span class="mn">${m.name}</span><span><span class="mq">${m.qty} ${m.unit}</span><span class="mc">₱${fmt(m.cost)}</span></span></div>`;
+      } else {
+        return `<div class="mat-line"><span class="mn">${m.name}</span><span><span class="mq">${m.qty} ${m.unit}</span><span class="mc">₱${fmt(m.cost)}</span></span></div>`;
+      }
+    }).join('');
+  }
+  
   // All sections only show items available from the selected supplier
   function filtered(list){return list.filter(m=>!m.field||supplierAvailMap[m.field]===true);}
   function catCost(list){return list.reduce((s,m)=>s+(m.cost||0),0);}
@@ -908,12 +946,26 @@ function calculate(){
 
   // ── Wall summary ──
   const wallSummary=wallEntries.map(w=>{
-    const area=(parseFloat(w.length)||0)*(parseFloat(w.width)||0);
+    const L=parseFloat(w.length)||0;
+    const W=parseFloat(w.width)||0;
+    const area=L*W;
     const chbCount=w.type==='chb'?Math.ceil(area*12.5):0;
-    // Mortar: ~0.02 m³ per m², Plaster: ~0.015 m³ per m²
-    const mortarVol=w.type==='mortar'?+(area*0.02).toFixed(3):0;
-    const plasterVol=w.type==='plaster'?+(area*0.015).toFixed(3):0;
-    return{...w,wallArea:area,chbCount,mortarVol,plasterVol};
+
+    // Mortar: V = thickness x W x L, TotalVol = V x 15
+    const mortarThick=parseFloat(w.thickness)||0.0125;
+    const mortarVol=+(mortarThick*W*L).toFixed(4);
+    const mortarTotalVol=+(mortarVol*15).toFixed(3);
+    const mortarCementBags=Math.ceil(mortarTotalVol*12);
+    const mortarSandM3=+(mortarTotalVol*1).toFixed(3);
+
+    // Plastering: A = L x W, Vol = A x 0.016
+    const plasterVol=+(area*0.016).toFixed(3);
+    const plasterCementBags=Math.ceil(plasterVol*12);
+    const plasterSandM3=+(plasterVol*1).toFixed(3);
+
+    return{...w,wallArea:area,chbCount,
+      mortarTotalVol,mortarCementBags,mortarSandM3,
+      plasterVol,plasterCementBags,plasterSandM3};
   });
 
   // ────────────────────────────────────────────
@@ -998,29 +1050,37 @@ function calculate(){
   // SECTION 4: WALL & PLASTER FINISHES
   // ────────────────────────────────────────────
   const sec4Mats=[];
+  let chbItems=[];
+  let mortarItems=[];
+  let plasterItems=[];
+  
   wallSummary.forEach((w,wi)=>{
-    const label=`Wall ${wi+1}`;
     if(w.type==='chb'&&w.chbCount>0){
-      sec4Mats.push({name:`${label} — CHB (${w.wallArea.toFixed(1)} m²)`,qty:w.chbCount,unit:'pcs',cost:w.chbCount*P.chb4,field:'pChb4'});
-      // Mortar for CHB: 1 bag cement + 0.05m³ sand per m²
-      const mortarBags=Math.ceil(w.wallArea*1);
-      const mortarSand=+(w.wallArea*0.05).toFixed(2);
-      sec4Mats.push({name:`${label} — Mortar Cement`,qty:mortarBags,unit:'bags',cost:mortarBags*portlandPrice,field:'pCementPortland'});
-      sec4Mats.push({name:`${label} — Mortar Sand`,qty:mortarSand,unit:'m³',cost:mortarSand*P.sand,field:'pSand'});
-    }else if(w.type==='mortar'&&w.wallArea>0){
-      // Mortar wall: cement bags + sand
-      const mortarBags=Math.ceil(w.wallArea*1);
-      const mortarSand=+(w.wallArea*0.05).toFixed(2);
-      sec4Mats.push({name:`${label} — Mortar Cement (${w.wallArea.toFixed(1)} m²)`,qty:mortarBags,unit:'bags',cost:mortarBags*portlandPrice,field:'pCementPortland'});
-      sec4Mats.push({name:`${label} — Mortar Sand`,qty:mortarSand,unit:'m³',cost:mortarSand*P.sand,field:'pSand'});
-    }else if(w.type==='plaster'&&w.wallArea>0){
-      // Plaster: cement bags + sand, thinner mix
-      const plasterBags=Math.ceil(w.wallArea*0.5);
-      const plasterSand=+(w.wallArea*0.03).toFixed(2);
-      sec4Mats.push({name:`${label} — Plaster Cement (${w.wallArea.toFixed(1)} m²)`,qty:plasterBags,unit:'bags',cost:plasterBags*portlandPrice,field:'pCementPortland'});
-      sec4Mats.push({name:`${label} — Plaster Sand`,qty:plasterSand,unit:'m³',cost:plasterSand*P.sand,field:'pSand'});
+      const pricePerPc=w.chbSize==='6'?P.chb6:P.chb4;
+      chbItems.push({name:`(${w.wallArea.toFixed(1)} m²)`,qty:w.chbCount,unit:'pcs',cost:w.chbCount*pricePerPc});
+    } else if(w.type==='mortar'&&w.wallArea>0){
+      mortarItems.push({name:`Cement (${w.wallArea.toFixed(1)} m²)`,qty:w.mortarCementBags,unit:'bags',cost:w.mortarCementBags*portlandPrice,field:'pCementPortland',indent:true});
+      mortarItems.push({name:`Sand (${w.wallArea.toFixed(1)} m²)`,qty:w.mortarSandM3,unit:'m³',cost:w.mortarSandM3*P.sand,field:'pSand',indent:true});
+    } else if(w.type==='plaster'&&w.wallArea>0){
+      plasterItems.push({name:`Cement (${w.wallArea.toFixed(1)} m²)`,qty:w.plasterCementBags,unit:'bags',cost:w.plasterCementBags*portlandPrice,field:'pCementPortland',indent:true});
+      plasterItems.push({name:`Sand (${w.wallArea.toFixed(1)} m²)`,qty:w.plasterSandM3,unit:'m³',cost:w.plasterSandM3*P.sand,field:'pSand',indent:true});
     }
   });
+  
+  // Organize into hierarchy
+  if(chbItems.length){
+    sec4Mats.push({name:'CHB',isHeader:true});
+    sec4Mats.push(...chbItems);
+  }
+  if(mortarItems.length){
+    sec4Mats.push({name:'MORTAR',isHeader:true});
+    sec4Mats.push(...mortarItems);
+  }
+  if(plasterItems.length){
+    sec4Mats.push({name:'PLASTER',isHeader:true});
+    sec4Mats.push(...plasterItems);
+  }
+  
   const fSec4=filtered(sec4Mats);
   const cost4=catCost(fSec4);
 
@@ -1042,13 +1102,17 @@ function calculate(){
   }
 
   const grandMaterialCost=cost1+cost2+cost3+cost4+customMatCost;
+  
+  // Calculate total cement bags from sec1Mats (includes ground floor + additional slabs)
+  const totalCementBags=sec1Mats.reduce((sum,m)=>sum+(m.name.includes('Cement')?m.qty:0),0);
   const totalSand=+(totalConcreteVol*0.5).toFixed(2);
   const totalGravel=+(totalConcreteVol*1.0).toFixed(2);
 
   // Floor area sub-labels
   const floorLabels=floors.map(f=>`${f.label}: ${(f.length*f.width).toFixed(1)} m²`).join(' · ')||'No floors added';
 
-  function catBlock(icon,title,subtitle,matList,cost){
+  function catBlock(icon,title,subtitle,matList,cost,renderFn){
+    const rfn=renderFn||matRows;
     return`<div class="floor-result">
       <div class="floor-result-head">
         <span>${icon} ${title} ${subtitle?`<span style="font-size:11px;font-weight:400;opacity:.75;margin-left:6px">${subtitle}</span>`:''}
@@ -1056,7 +1120,7 @@ function calculate(){
         <span>₱${fmt(cost)}</span>
       </div>
       <div class="floor-result-body">
-        ${matList.length?matRows(matList):'<div style="font-size:12px;color:var(--ink3);padding:6px 0;font-style:italic">No items — add floors or check supplier availability.</div>'}
+        ${matList.length?rfn(matList):'<div style="font-size:12px;color:var(--ink3);padding:6px 0;font-style:italic">No items — add floors or check supplier availability.</div>'}
       </div>
     </div>`;
   }
@@ -1065,7 +1129,7 @@ function calculate(){
     catBlock('','GROUND FLOOR SLAB',fSec2.length?`(${fSec2.length} item${fSec2.length>1?'s':''} from supplier)`:'(supplier items only)',fSec2,cost2)+
     catBlock('','SLAB',floors.length?`(${totalArea.toFixed(1)} m\u00B2)`:'',fSec1,cost1)+
     catBlock('','STRUCTURAL ELEMENTS',totalColCount||totalBeamCount?`(${totalColCount} col \u00B7 ${totalBeamCount} beams)`:'',fSec3,cost3)+
-    catBlock('','WALLS AND FINISHES',wallSummary.length?`(${wallSummary.length} section${wallSummary.length>1?'s':''})`:'',fSec4,cost4)+
+    catBlock('','WALLS AND FINISHES',wallSummary.length?`(${wallSummary.length} section${wallSummary.length>1?'s':''})`:'',fSec4,cost4,matRowsHierarchy)+
     customMatHTML;
 
   // Helper: safely set textContent only if element exists
@@ -1081,6 +1145,7 @@ function calculate(){
     _results.dataset.floors=floors.length;
   }
   setText('rVol',totalConcreteVol.toFixed(2));
+  setText('rCement',totalCementBags);
   setText('rSand',totalSand);
   setText('rGravel',totalGravel);
   setHTML('floorBreakdowns',breakdownHTML);
@@ -1228,22 +1293,9 @@ function renderSupplierCards(){
 
   wrap.innerHTML=filtered.map(({s,i})=>{
     const initials=(s.name||'?').split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,3);
-    const matchedMats=[];
-    if(s.materials&&s.materials.length){
-      Object.entries(MAT_MAP).forEach(([id,info])=>{
-        const match=s.materials.find(m=>info.keys.some(k=>m.name.toLowerCase().includes(k)));
-        if(match&&parseFloat(match.price)>0){
-          matchedMats.push({label:info.label,price:parseFloat(match.price),unit:match.unit||''});
-        }
-      });
-    }
     const isSel=selectedSupplier&&selectedSupplier.email===s.email;
     const metaBits=[s.location,s.category].filter(Boolean);
     const metaHTML=metaBits.map((b,j)=>j===0?b:`<span class="sup-card-meta-dot"></span>${b}`).join('');
-    const matRows=matchedMats.length
-      ? matchedMats.map(m=>`<div class="sup-mat-row"><span class="mn">${m.label}${m.unit?' <span style="color:var(--ink3);font-weight:400">/ '+m.unit+'</span>':''}</span><span class="mp">₱${m.price.toLocaleString('en-PH',{minimumFractionDigits:2,maximumFractionDigits:2})}</span></div>`).join('')
-      : `<div style="font-size:12px;color:var(--ink3);padding:4px 0;font-style:italic">No matching materials listed.</div>`;
-    const countBadge=`<span class="sup-mat-count">${matchedMats.length} matched materials</span>`;
 
     return `<div class="sup-card${isSel?' selected':''}" onclick="selectSupplierByIdx(${i})">
       <div class="sup-card-head">
@@ -1253,8 +1305,6 @@ function renderSupplierCards(){
           <div class="sup-card-meta">${metaHTML||'&mdash;'}</div>
         </div>
       </div>
-      <div class="sup-mat-list">${matRows}</div>
-      ${countBadge}
     </div>`;
   }).join('');
 }
