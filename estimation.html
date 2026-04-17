@@ -504,14 +504,15 @@ main{padding:16px 16px 100px;max-width:600px;margin:0 auto}
   <button class="btn btn-primary" id="nextBtn">Next →</button>
 </div>
 
-<script>
+<script type="module">
+import { supabase, getCurrentUser, escapeHtml } from './supabase-client.js';
+
 let currentStep=0,floors=[],slabEntries=[],currentUser=null;
 const totalSteps=3;
 
-function checkLogin(){
-  const u=localStorage.getItem('currentUser');
-  if(u){
-    currentUser=JSON.parse(u);
+async function checkLogin(){
+  currentUser = await getCurrentUser();
+  if(currentUser){
     document.getElementById('loginBtn').style.display='none';
     document.getElementById('burgerBtn').style.display='flex';
     document.getElementById('sbName').textContent=currentUser.name;
@@ -519,9 +520,14 @@ function checkLogin(){
     document.getElementById('sidebar').querySelector('.sb-avatar').textContent=(currentUser.name||'U').charAt(0).toUpperCase();
     if(currentUser.role==='supplier')document.getElementById('adminLink').style.display='flex';
   }else{document.getElementById('loginBtn').style.display='';document.getElementById('burgerBtn').style.display='none';}
+
+  // Once auth is known, we can load saved estimates if the saved view is open
+  if (new URLSearchParams(location.search).get('view') === 'saved') {
+    renderSavedList();
+  }
 }
 function toggleSidebar(){document.getElementById('sidebar').classList.toggle('open');document.getElementById('overlay').classList.toggle('show');}
-function doLogout(){if(confirm('Logout?')){localStorage.removeItem('currentUser');window.location.href='index.html';}}
+async function doLogout(){if(confirm('Logout?')){await supabase.auth.signOut();window.location.href='index.html';}}
 
 // Cement type toggle
 function showCementFields(){
@@ -1174,24 +1180,41 @@ function saveEst(){
   const floorsCount=_results.dataset.floors||'0';
   const breakdownHTML=document.getElementById('floorBreakdowns').innerHTML;
   const supName=selectedSupplier?selectedSupplier.name:null;
-  const est={
-    id:Date.now(),
-    name:projName,
-    total,
-    area,
-    floors:floorsCount,
-    supplier:supName,
-    breakdown:breakdownHTML,
-    savedAt:new Date().toLocaleDateString('en-PH',{year:'numeric',month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'})
-  };
-  const key='costruct_estimates_'+(currentUser?currentUser.email:'guest');
-  const saved=JSON.parse(localStorage.getItem(key)||'[]');
-  saved.unshift(est);
-  localStorage.setItem(key,JSON.stringify(saved));
+  const savedAtStr=new Date().toLocaleDateString('en-PH',{year:'numeric',month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'});
+
   const btn=document.querySelector('.ra-save');
   const orig=btn.textContent;
-  btn.textContent=' Saved!';btn.style.background='var(--g600)';
-  setTimeout(()=>{btn.textContent=orig;btn.style.background='';},2000);
+
+  if (currentUser) {
+    // Logged in → save to Supabase
+    supabase.from('estimates').insert({
+      user_id: currentUser.id,
+      name: projName,
+      total,
+      area: String(area),
+      floors: parseInt(floorsCount) || 0,
+      supplier: supName,
+      breakdown: breakdownHTML,
+      saved_at: savedAtStr
+    }).then(({ error }) => {
+      if (error) { alert('Failed to save: ' + error.message); return; }
+      btn.textContent=' Saved!';btn.style.background='var(--g600)';
+      setTimeout(()=>{btn.textContent=orig;btn.style.background='';},2000);
+    });
+  } else {
+    // Guest → localStorage fallback
+    const est={
+      id:Date.now(),
+      name:projName,total,area,
+      floors:floorsCount,supplier:supName,
+      breakdown:breakdownHTML,savedAt:savedAtStr
+    };
+    const saved=JSON.parse(localStorage.getItem('costruct_estimates_guest')||'[]');
+    saved.unshift(est);
+    localStorage.setItem('costruct_estimates_guest',JSON.stringify(saved));
+    btn.textContent=' Saved!';btn.style.background='var(--g600)';
+    setTimeout(()=>{btn.textContent=orig;btn.style.background='';},2000);
+  }
 }
 
 function printEst(){window.print();}
@@ -1263,14 +1286,17 @@ const MAT_MAP={
 };
 const DEFAULT_PRICES={pCementPortland:295,pCementPozzolan:265,pSand:1200,pGravel:1500,pSteel10:350,pSteel12:475,pSteel16:850,pChb4:12,pChb6:16,pTile:45,pGi:385,pLumber:125,pNails:85,pWire:95};
 const CAT_ICONS={hardware:'',lumber:'',construction:'',cement:''};
-let selectedSupplier=null,supplierAvailMap={};
+let selectedSupplier=null,supplierAvailMap={},_allSuppliers=[];
 
-function renderSupplierCards(){
-  const suppliers=JSON.parse(localStorage.getItem('registeredSuppliers')||'[]');
+async function renderSupplierCards(){
+  const { data, error } = await supabase.from('suppliers').select('*').order('created_at',{ascending:false});
+  if (error) { console.error('suppliers load:', error); }
+  _allSuppliers = data || [];
+
   const wrap=document.getElementById('supplierCards');
   const search=(document.getElementById('hwSearch')?.value||'').toLowerCase().trim();
 
-  if(!suppliers.length){
+  if(!_allSuppliers.length){
     wrap.innerHTML=`<div class="sup-empty">
       <div class="sup-empty-ico">SUP</div>
       <h3>No registered suppliers yet</h3>
@@ -1281,7 +1307,7 @@ function renderSupplierCards(){
   }
   document.getElementById('hwSearch').style.display='';
 
-  const filtered=suppliers.map((s,i)=>({s,i})).filter(({s})=>{
+  const filtered=_allSuppliers.map((s,i)=>({s,i})).filter(({s})=>{
     if(!search)return true;
     return s.name.toLowerCase().includes(search)||(s.location||'').toLowerCase().includes(search);
   });
@@ -1295,13 +1321,13 @@ function renderSupplierCards(){
     const initials=(s.name||'?').split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,3);
     const isSel=selectedSupplier&&selectedSupplier.email===s.email;
     const metaBits=[s.location,s.category].filter(Boolean);
-    const metaHTML=metaBits.map((b,j)=>j===0?b:`<span class="sup-card-meta-dot"></span>${b}`).join('');
+    const metaHTML=metaBits.map((b,j)=>j===0?escapeHtml(b):`<span class="sup-card-meta-dot"></span>${escapeHtml(b)}`).join('');
 
     return `<div class="sup-card${isSel?' selected':''}" onclick="selectSupplierByIdx(${i})">
       <div class="sup-card-head">
         <div class="sup-card-avatar">${initials}</div>
         <div style="flex:1;min-width:0">
-          <div class="sup-card-name">${s.name}</div>
+          <div class="sup-card-name">${escapeHtml(s.name)}</div>
           <div class="sup-card-meta">${metaHTML||'&mdash;'}</div>
         </div>
       </div>
@@ -1309,18 +1335,22 @@ function renderSupplierCards(){
   }).join('');
 }
 
-function selectSupplierByIdx(i){
-  const suppliers=JSON.parse(localStorage.getItem('registeredSuppliers')||'[]');
-  const s=suppliers[i];if(!s)return;
+async function selectSupplierByIdx(i){
+  const s=_allSuppliers[i];if(!s)return;
 
   // Reset price inputs
   Object.keys(DEFAULT_PRICES).forEach(id=>{const el=document.getElementById(id);if(el)el.value=0;});
   supplierAvailMap={};
   selectedSupplier=s;
 
-  if(s.materials&&s.materials.length){
+  // Fetch this supplier's materials from the DB
+  const { data: mats } = await supabase
+    .from('materials').select('name, price')
+    .eq('supplier_id', s.id);
+
+  if(mats && mats.length){
     Object.entries(MAT_MAP).forEach(([id,info])=>{
-      const match=s.materials.find(m=>info.keys.some(k=>m.name.toLowerCase().includes(k)));
+      const match=mats.find(m=>info.keys.some(k=>m.name.toLowerCase().includes(k)));
       if(match&&parseFloat(match.price)>0){
         const el=document.getElementById(id);if(el)el.value=parseFloat(match.price);
         supplierAvailMap[id]=true;
@@ -1338,9 +1368,8 @@ function selectSupplierByIdx(i){
   else if(hasPoz)ctEl.value='pozzolan';
   else ctEl.value='portland';
 
-  // Update note text
   const note=document.getElementById('hwNote');
-  if(note)note.innerHTML=`Using prices from <strong>${s.name}</strong>. Tap another card to change.`;
+  if(note)note.innerHTML=`Using prices from <strong>${escapeHtml(s.name)}</strong>. Tap another card to change.`;
 
   renderSupplierCards();
 }
@@ -1350,50 +1379,7 @@ checkLogin();
 // Initialize next button
 document.getElementById('nextBtn').onclick=()=>nextStep();
 
-// Initialize with sample suppliers if empty
-if(!JSON.parse(localStorage.getItem('registeredSuppliers')||'[]').length){
-  const sampleSuppliers=[
-    {
-      name:'Best Hardware & Supply',
-      email:'bestbuilding@example.com',
-      contact:'09123456789',
-      address:'Manila',
-      location:'Manila',
-      category:'Hardware',
-      materials:[
-        {name:'Portland Cement 40kg',price:295,unit:'bag'},
-        {name:'Pozzolan Cement 40kg',price:265,unit:'bag'},
-        {name:'Sand',price:1200,unit:'m³'},
-        {name:'Gravel',price:1500,unit:'m³'},
-        {name:'Steel Bar 10mm',price:350,unit:'pcs'},
-        {name:'Steel Bar 12mm',price:475,unit:'pcs'},
-        {name:'Steel Bar 16mm',price:850,unit:'pcs'},
-        {name:'CHB 4"',price:12,unit:'pcs'},
-        {name:'CHB 6"',price:16,unit:'pcs'},
-        {name:'GI Sheet',price:385,unit:'pcs'},
-        {name:'Nails',price:85,unit:'kg'},
-        {name:'Tie Wire',price:95,unit:'kg'}
-      ]
-    },
-    {
-      name:'Quality Builders Depot',
-      email:'quality@example.com',
-      contact:'09234567890',
-      address:'Quezon City',
-      location:'Quezon City',
-      category:'Construction',
-      materials:[
-        {name:'Portland Cement',price:300,unit:'bag'},
-        {name:'Sand',price:1100,unit:'m³'},
-        {name:'Gravel',price:1400,unit:'m³'},
-        {name:'Steel Bar 12mm',price:470,unit:'pcs'},
-        {name:'Steel Bar 16mm',price:840,unit:'pcs'},
-        {name:'CHB 4"',price:11,unit:'pcs'}
-      ]
-    }
-  ];
-  localStorage.setItem('registeredSuppliers',JSON.stringify(sampleSuppliers));
-}
+// (Sample-supplier seeding removed — suppliers now register via signup.)
 
 renderSupplierCards();
 renderColumns();
@@ -1418,14 +1404,36 @@ function initSavedView(){
   renderSavedList();
 }
 
-function renderSavedList(){
-  const key='costruct_estimates_'+(currentUser?currentUser.email:'guest');
-  const saved=JSON.parse(localStorage.getItem(key)||'[]');
+async function renderSavedList(){
   const list=document.getElementById('estList');
+  let saved = [];
+
+  if (currentUser) {
+    // Logged in → fetch from Supabase
+    const { data, error } = await supabase
+      .from('estimates').select('*')
+      .eq('user_id', currentUser.id)
+      .order('created_at', { ascending: false });
+    if (error) { console.error('estimates load:', error); }
+    // Normalize: id must be stable & string-safe, savedAt comes from saved_at
+    saved = (data || []).map(e => ({
+      id: e.id,
+      name: e.name,
+      total: e.total || '',
+      area: e.area || '',
+      floors: e.floors || 0,
+      supplier: e.supplier,
+      breakdown: e.breakdown || '',
+      savedAt: e.saved_at || ''
+    }));
+  } else {
+    // Guest → localStorage fallback
+    saved = JSON.parse(localStorage.getItem('costruct_estimates_guest') || '[]');
+  }
 
   // Stats
   const totalCost=saved.reduce((s,e)=>s+parseFloat((e.total||'0').replace(/[^\d.]/g,'')),0);
-  const totalFloors=saved.reduce((s,e)=>s+(e.floors||0),0);
+  const totalFloors=saved.reduce((s,e)=>s+(parseInt(e.floors)||0),0);
   document.getElementById('svStats').innerHTML=`
     <div class="sv-stat"><div class="sv-stat-num">${saved.length}</div><div class="sv-stat-lbl">Saved Estimates</div></div>
     <div class="sv-stat"><div class="sv-stat-num">${totalFloors}</div><div class="sv-stat-lbl">Total Floors</div></div>
@@ -1441,7 +1449,8 @@ function renderSavedList(){
     return;
   }
 
-  list.innerHTML=saved.map((e,i)=>{
+  // Build cards using data attributes (ids may be uuid strings now, not numbers)
+  list.innerHTML=saved.map(e=>{
     const initials=(e.name||'?').split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,3);
     const metaParts=[
       e.floors+' floor(s)',
@@ -1449,40 +1458,64 @@ function renderSavedList(){
       e.supplier||null,
       e.savedAt
     ].filter(Boolean);
-    return `<div class="est-card" id="estCard_${e.id}">
-      <div class="est-card-head" onclick="toggleEstBody(${e.id})">
-        <div class="est-icon">${initials}</div>
+    const safeId = String(e.id);
+    return `<div class="est-card" data-card="${escapeHtml(safeId)}">
+      <div class="est-card-head" data-toggle="${escapeHtml(safeId)}">
+        <div class="est-icon">${escapeHtml(initials)}</div>
         <div>
-          <div class="est-name">${e.name}</div>
-          <div class="est-meta">${metaParts.map((p,i)=>i===0?p:`<span class="est-meta-dot"></span>${p}`).join('')}</div>
+          <div class="est-name">${escapeHtml(e.name)}</div>
+          <div class="est-meta">${metaParts.map((p,i)=>i===0?escapeHtml(String(p)):`<span class="est-meta-dot"></span>${escapeHtml(String(p))}`).join('')}</div>
         </div>
         <div class="est-right">
-          <div class="est-total">${e.total}</div>
+          <div class="est-total">${escapeHtml(e.total)}</div>
           <div class="est-chevron">▼</div>
         </div>
       </div>
-      <div class="est-body" id="estBody_${e.id}">
+      <div class="est-body" data-body="${escapeHtml(safeId)}">
         ${e.breakdown}
-        <button class="est-del-btn" onclick="deleteEst(${e.id})">Delete this estimate</button>
+        <button class="est-del-btn" data-del="${escapeHtml(safeId)}">Delete this estimate</button>
       </div>
     </div>`;
   }).join('');
+
+  // Wire handlers
+  list.querySelectorAll('[data-toggle]').forEach(el => {
+    el.addEventListener('click', () => toggleEstBody(el.getAttribute('data-toggle')));
+  });
+  list.querySelectorAll('[data-del]').forEach(el => {
+    el.addEventListener('click', (ev) => { ev.stopPropagation(); deleteEst(el.getAttribute('data-del')); });
+  });
 }
 
 function toggleEstBody(id){
-  const el=document.getElementById('estBody_'+id);
-  const card=document.getElementById('estCard_'+id);
-  if(el){el.classList.toggle('open');card&&card.classList.toggle('open');}
+  const card=document.querySelector(`[data-card="${CSS.escape(id)}"]`);
+  const body=document.querySelector(`[data-body="${CSS.escape(id)}"]`);
+  if(body){body.classList.toggle('open');card&&card.classList.toggle('open');}
 }
 
-function deleteEst(id){
+async function deleteEst(id){
   if(!confirm('Delete this estimate?')) return;
-  const key='costruct_estimates_'+(currentUser?currentUser.email:'guest');
-  let saved=JSON.parse(localStorage.getItem(key)||'[]');
-  saved=saved.filter(e=>e.id!==id);
-  localStorage.setItem(key,JSON.stringify(saved));
+  if (currentUser) {
+    const { error } = await supabase.from('estimates').delete().eq('id', id);
+    if (error) { alert('Failed to delete: ' + error.message); return; }
+  } else {
+    let saved=JSON.parse(localStorage.getItem('costruct_estimates_guest')||'[]');
+    saved=saved.filter(e=>String(e.id)!==String(id));
+    localStorage.setItem('costruct_estimates_guest',JSON.stringify(saved));
+  }
   renderSavedList();
 }
+
+// Expose for any remaining inline handlers / cross-module reference
+window.toggleSidebar = toggleSidebar;
+window.doLogout = doLogout;
+window.saveEst = saveEst;
+window.printEst = printEst;
+window.renderSupplierCards = renderSupplierCards;
+window.selectSupplierByIdx = selectSupplierByIdx;
+window.renderSavedList = renderSavedList;
+window.toggleEstBody = toggleEstBody;
+window.deleteEst = deleteEst;
 
 initSavedView();
 </script>

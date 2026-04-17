@@ -281,7 +281,10 @@ footer strong{color:rgba(255,255,255,0.8)}
   <div class="hero-content">
     <div class="hero-tag"><span></span>Partido, Camarines Sur</div>
     <h1>Real-Time <em>Material Quantity</em> & Cost Estimation</h1>
-    <p>Compute material quantities instantly and access up-to-date pricing from local suppliers in the Partido Area.</p>
+    <p> Speed up your construction
+planning with instant material estimates
+and real-time pricing from local suppliers in
+the Partido Area.</p>
     <div class="hero-btns" id="heroBtns">
       <button class="hero-btn-primary" onclick="checkAuth('estimation.html')">Start Estimating</button>
     </div>
@@ -302,7 +305,7 @@ footer strong{color:rgba(255,255,255,0.8)}
     <div class="step-card">
       <div class="step-num-badge">1</div>
       <h3>Input Dimensions</h3>
-      <p>Enter floor area, wall height, beams, columns, and more based on your floor plan.</p>
+      <p>Enter floor area, wall height, dimensions of beams and columns, and more based on your floor plan.</p>
     </div>
     <div class="step-card">
       <div class="step-num-badge">2</div>
@@ -311,8 +314,10 @@ footer strong{color:rgba(255,255,255,0.8)}
     </div>
     <div class="step-card">
       <div class="step-num-badge">3</div>
-      <h3>Real-Time Pricing</h3>
-      <p>View live material cost updates pulled directly from local suppliers.</p>
+      <h3>Material Quantity & Cost Estimation</h3>
+      <p>
+Compute required material quantities and total costs
+using real-time supplier prices.</p>
     </div>
   </div>
 </div>
@@ -330,11 +335,13 @@ footer strong{color:rgba(255,255,255,0.8)}
       </div>
       <div class="feature-card">
         <h3>Supplier Directory</h3>
-        <p>Browse and compare verified local suppliers in the Partido Area with up-to-date catalogs.</p>
+        <p>Browse a verified local suppliers in the Partido Area with up-to-date catalogs.</p>
       </div>
       <div class="feature-card">
-        <h3>Order Requests</h3>
-        <p>Send inquiries directly to suppliers through the platform and track material availability.</p>
+        <h3> Total Cost Estimation </h3>
+        <p>Automatically computes the total project
+cost based on material quantities and
+updated prices.</p>
       </div>
     </div>
   </div>
@@ -357,7 +364,10 @@ footer strong{color:rgba(255,255,255,0.8)}
 <div class="section" id="about">
   <div class="about-wrap">
     <h2>About COSTruct</h2>
-    <p>COSTruct is a real-time material quantity and cost estimation system designed for the Partido Area. It enables buyers to compute materials instantly and gives suppliers a platform to update prices directly.</p>
+    <p> COSTruct is a real-time construction
+cost estimation interface that integrates supplier
+and buyer functionalities with dynamic materials
+quantity and cost estimation capabilities.</p>
   </div>
 </div>
 
@@ -366,14 +376,15 @@ footer strong{color:rgba(255,255,255,0.8)}
   <strong>COSTruct</strong> &nbsp;·&nbsp; © 2025 &nbsp;·&nbsp; Developed for Thesis Purposes &nbsp;·&nbsp; Partido, Camarines Sur
 </footer>
 
-<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+<script type="module">
+import { supabase, getCurrentUser, signOutAndGo } from './supabase-client.js';
+
 let currentUser = null;
 
-function init() {
-  const d = localStorage.getItem('currentUser');
-  if (d) {
+async function init() {
+  currentUser = await getCurrentUser();
+  if (currentUser) {
     // Logged in — show nav links and burger menu
-    currentUser = JSON.parse(d);
     document.getElementById('navLinks').style.display = 'flex';
     document.getElementById('loginBtn').style.display = 'none';
     document.getElementById('burgerBtn').style.display = 'flex';
@@ -381,14 +392,12 @@ function init() {
     document.getElementById('sbEmail').textContent = currentUser.email;
     document.querySelector('.sb-avatar').textContent = (currentUser.name || 'U').charAt(0).toUpperCase();
     if (currentUser.role === 'supplier') document.getElementById('adminItem').style.display = 'flex';
-    // Logged in: View Estimated Materials (primary) only
     document.getElementById('heroBtns').innerHTML =
       `<button class="hero-btn-primary" onclick="location.href='estimation.html'">Start Estimation</button>`;
   } else {
-    // Guest: Start Estimating (primary) only
+    // Guest
     document.getElementById('heroBtns').innerHTML =
       `<button class="hero-btn-primary" onclick="startSurvey()">Start Estimating</button>`;
-    // Guest — center logo, hide nav links and burger, show subtle login btn
     document.getElementById('navLinks').style.display = 'none';
     document.getElementById('burgerBtn').style.display = 'none';
     document.getElementById('loginBtn').style.display = 'flex';
@@ -406,9 +415,24 @@ function toggleSidebar() {
   document.getElementById('sidebar').classList.toggle('on');
   document.getElementById('overlay').classList.toggle('on');
 }
-function doLogout() {
-  if (confirm('Logout?')) { localStorage.removeItem('currentUser'); location.reload(); }
+async function doLogout() {
+  if (confirm('Logout?')) {
+    await supabase.auth.signOut();
+    location.reload();
+  }
 }
+
+// React to auth changes (login in another tab, token refresh, etc.)
+supabase.auth.onAuthStateChange((_event, _session) => {
+  // Re-run init to update the UI
+  init();
+});
+
+// Expose for inline handlers
+window.checkAuth = checkAuth;
+window.closeLock = closeLock;
+window.toggleSidebar = toggleSidebar;
+window.doLogout = doLogout;
 
 
 //  SURVEY 
@@ -606,6 +630,13 @@ function surveyBack() {
   }
 }
 //  END SURVEY 
+
+// Expose survey functions to window (needed for inline onclick)
+window.startSurvey = startSurvey;
+window.closeSurvey = closeSurvey;
+window.selectSurveyOpt = selectSurveyOpt;
+window.surveyNext = surveyNext;
+window.surveyBack = surveyBack;
 
 // Scroll animations
 const obs = new IntersectionObserver((entries) => {

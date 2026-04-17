@@ -70,6 +70,9 @@ select:focus{border-color:var(--g600)}
 .empty-icon{font-size:36px;margin-bottom:12px}
 .empty h3{font-size:16px;font-weight:700;color:var(--ink);margin-bottom:6px}
 .empty p{font-size:13px;color:var(--ink3)}
+.loading{grid-column:1/-1;text-align:center;padding:60px 20px;color:var(--ink3);font-size:14px}
+.spinner{display:inline-block;width:28px;height:28px;border:3px solid var(--g100);border-top-color:var(--g600);border-radius:50%;animation:spin .8s linear infinite;margin-bottom:12px}
+@keyframes spin{to{transform:rotate(360deg)}}
 @media(max-width:768px){
   nav ul{display:none}.login-btn{display:none}.burger{display:flex}
   .search-row{grid-template-columns:1fr}
@@ -98,7 +101,7 @@ select:focus{border-color:var(--g600)}
     <button class="sb-close" onclick="toggleSidebar()">&times;</button>
     <div class="sb-avatar">U</div>
     <div class="sb-name" id="sbName">User Name</div>
-    <div class="sb-email" id="sbEmail"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="a3d6d0c6d1e3c6cec2cacf8dc0ccce">[email&#160;protected]</a></div>
+    <div class="sb-email" id="sbEmail">user@example.com</div>
   </div>
   <div class="sb-menu">
     <div class="sb-item">Profile</div>
@@ -126,63 +129,161 @@ select:focus{border-color:var(--g600)}
         <option value="Goa">Goa</option>
         <option value="San Jose">San Jose</option>
         <option value="Lagonoy">Lagonoy</option>
+        <option value="Sagnay">Sagnay</option>
       </select>
     </div>
   </div>
   <div class="results-bar"><p id="resultCount"></p></div>
-  <div class="grid" id="grid"></div>
+  <div class="grid" id="grid">
+    <div class="loading"><div class="spinner"></div><div>Loading suppliers...</div></div>
+  </div>
 </div>
-<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
-let currentUser=null;
-const ICONS={hardware:'HW',lumber:'LB',construction:'GC',cement:'CA'};
-function loadAll(){
-  return JSON.parse(localStorage.getItem('registeredSuppliers'))||[];
-}
-function doFilter(){
-  const q=document.getElementById('searchInput').value.toLowerCase();
-  const loc=document.getElementById('locSel').value;
-  const all=loadAll();
-  const f=all.filter(s=>{
-    const mq=!q||s.name.toLowerCase().includes(q)||s.location.toLowerCase().includes(q);
-    const ml=loc==='all'||s.location===loc;
-    return mq&&ml;
-  });
-  renderGrid(f,true);
-  const c=document.getElementById('resultCount');
-  c.textContent=f.length===all.length?`Showing all ${all.length} suppliers`:`${f.length} of ${all.length} suppliers`;
-}
-function renderGrid(list,isFiltered){
-  const g=document.getElementById('grid');
-  if(!list.length){
-    g.innerHTML=isFiltered
-      ?`<div class="empty"><div class="empty-icon"></div><h3>No suppliers found</h3><p>Try adjusting your search or filters.</p></div>`
-      :`<div class="empty"><div class="empty-icon"></div><h3>No suppliers yet</h3><p>No registered suppliers found. Suppliers can sign up through the registration page.</p></div>`;
-    return;
+
+<!-- Supabase JS v2 -->
+<script type="module">
+  import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+
+  // ====== CONFIGURE THESE ======
+  const SUPABASE_URL = 'https://YOUR-PROJECT-REF.supabase.co';
+  const SUPABASE_ANON_KEY = 'YOUR-ANON-PUBLIC-KEY';
+  // =============================
+
+  const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  const ICONS = { hardware:'HW', lumber:'LB', construction:'GC', cement:'CA' };
+
+  let allSuppliers = [];
+  let currentUser = null;
+
+  // ---- Data access ----
+  async function loadAll() {
+    const { data, error } = await supabase
+      .from('suppliers')
+      .select('id, email, name, owner_name, category, location, contact, address, description, since, delivery, rating, created_at')
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Error loading suppliers:', error);
+      return [];
+    }
+    return data || [];
   }
-  g.innerHTML=list.map(s=>{
-    const icon=ICONS[s.category]||'';
-    const cat=s.category.charAt(0).toUpperCase()+s.category.slice(1);
-    return `<div class="scard">
-      <div class="scard-top">
-        <div class="scard-avatar">${icon}</div>
-        <div><div class="scard-name">${s.name}</div><span class="badge">${cat}</span></div>
-      </div>
-      <div class="scard-info"><span style="font-size:11px;background:var(--g50);border:1px solid var(--g100);border-radius:4px;padding:1px 6px;font-weight:700;color:var(--g700);letter-spacing:.3px">LOC</span> ${s.location}</div>
-      <div class="scard-desc">${s.desc||'Authorized supplier for construction materials.'}</div>
-      <div class="scard-foot"><a href="catalog.html?email=${encodeURIComponent(s.email)}" class="view-btn">View catalog →</a></div>
-    </div>`;
-  }).join('');
-}
-function toggleSidebar(){document.getElementById('sidebar').classList.toggle('on');document.getElementById('overlay').classList.toggle('on');}
-function doLogout(){if(confirm('Logout?')){localStorage.removeItem('currentUser');location.href='index.html';}}
-function init(){
-  const d=localStorage.getItem('currentUser');
-  if(d){currentUser=JSON.parse(d);document.getElementById('loginBtn').style.display='none';document.getElementById('burgerBtn').style.display='flex';document.getElementById('sbName').textContent=currentUser.name;document.getElementById('sbEmail').textContent=currentUser.email;document.querySelector('.sb-avatar').textContent=(currentUser.name||'U').charAt(0).toUpperCase();if(currentUser.role==='supplier')document.getElementById('adminItem').style.display='flex';}
-}
-init();
-const allSuppliers=loadAll();
-document.getElementById('resultCount').textContent=allSuppliers.length?'Showing all '+allSuppliers.length+' suppliers':'';
-renderGrid(allSuppliers,false);
+
+  // ---- Filtering / rendering ----
+  function doFilter() {
+    const q = document.getElementById('searchInput').value.toLowerCase();
+    const loc = document.getElementById('locSel').value;
+    const filtered = allSuppliers.filter(s => {
+      const mq = !q || (s.name || '').toLowerCase().includes(q) || (s.location || '').toLowerCase().includes(q);
+      const ml = loc === 'all' || s.location === loc;
+      return mq && ml;
+    });
+    renderGrid(filtered, true);
+    const c = document.getElementById('resultCount');
+    c.textContent = filtered.length === allSuppliers.length
+      ? `Showing all ${allSuppliers.length} suppliers`
+      : `${filtered.length} of ${allSuppliers.length} suppliers`;
+  }
+
+  function renderGrid(list, isFiltered) {
+    const g = document.getElementById('grid');
+    if (!list.length) {
+      g.innerHTML = isFiltered
+        ? `<div class="empty"><div class="empty-icon"></div><h3>No suppliers found</h3><p>Try adjusting your search or filters.</p></div>`
+        : `<div class="empty"><div class="empty-icon"></div><h3>No suppliers yet</h3><p>No registered suppliers found. Suppliers can sign up through the registration page.</p></div>`;
+      return;
+    }
+    g.innerHTML = list.map(s => {
+      const icon = ICONS[s.category] || '';
+      const cat = (s.category || '').charAt(0).toUpperCase() + (s.category || '').slice(1);
+      const desc = s.description || 'Authorized supplier for construction materials.';
+      return `<div class="scard">
+        <div class="scard-top">
+          <div class="scard-avatar">${icon}</div>
+          <div><div class="scard-name">${escapeHtml(s.name)}</div><span class="badge">${escapeHtml(cat)}</span></div>
+        </div>
+        <div class="scard-info"><span style="font-size:11px;background:var(--g50);border:1px solid var(--g100);border-radius:4px;padding:1px 6px;font-weight:700;color:var(--g700);letter-spacing:.3px">LOC</span> ${escapeHtml(s.location || '')}</div>
+        <div class="scard-desc">${escapeHtml(desc)}</div>
+        <div class="scard-foot"><a href="catalog.html?email=${encodeURIComponent(s.email)}" class="view-btn">View catalog →</a></div>
+      </div>`;
+    }).join('');
+  }
+
+  function escapeHtml(str) {
+    return String(str ?? '').replace(/[&<>"']/g, c => ({
+      '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+    }[c]));
+  }
+
+  // ---- Auth / session ----
+  async function loadCurrentUser() {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return null;
+
+    const user = session.user;
+    // Pull profile from `profiles` table (name, role). Falls back to metadata.
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('name, role')
+      .eq('id', user.id)
+      .maybeSingle();
+
+    return {
+      id: user.id,
+      email: user.email,
+      name: profile?.name || user.user_metadata?.name || user.email,
+      role: profile?.role || user.user_metadata?.role || 'buyer'
+    };
+  }
+
+  async function doLogout() {
+    if (!confirm('Logout?')) return;
+    await supabase.auth.signOut();
+    location.href = 'index.html';
+  }
+
+  function toggleSidebar() {
+    document.getElementById('sidebar').classList.toggle('on');
+    document.getElementById('overlay').classList.toggle('on');
+  }
+
+  // ---- Init ----
+  async function init() {
+    // 1. Session / user UI
+    currentUser = await loadCurrentUser();
+    if (currentUser) {
+      document.getElementById('loginBtn').style.display = 'none';
+      document.getElementById('burgerBtn').style.display = 'flex';
+      document.getElementById('sbName').textContent = currentUser.name;
+      document.getElementById('sbEmail').textContent = currentUser.email;
+      document.querySelector('.sb-avatar').textContent = (currentUser.name || 'U').charAt(0).toUpperCase();
+      if (currentUser.role === 'supplier') {
+        document.getElementById('adminItem').style.display = 'flex';
+      }
+    }
+
+    // 2. Suppliers list
+    allSuppliers = await loadAll();
+    document.getElementById('resultCount').textContent =
+      allSuppliers.length ? `Showing all ${allSuppliers.length} suppliers` : '';
+    renderGrid(allSuppliers, false);
+
+    // 3. Live updates when suppliers register / update
+    supabase
+      .channel('suppliers-changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'suppliers' }, async () => {
+        allSuppliers = await loadAll();
+        doFilter();
+      })
+      .subscribe();
+  }
+
+  // Expose for inline onclick handlers
+  window.toggleSidebar = toggleSidebar;
+  window.doLogout = doLogout;
+  window.doFilter = doFilter;
+
+  init();
 </script>
 </body>
 </html>

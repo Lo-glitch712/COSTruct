@@ -178,90 +178,169 @@ nav{position:fixed;top:0;left:0;right:0;z-index:500;background:rgba(5,32,22,0.96
   </div>
 </div>
 
-<script>
-let supplier=null,allMats=[];
-const CAT_LABELS={cement:'Cement & Aggregates',steel:'Steel & Rebars',lumber:'Lumber & Plywood',hardware:'Hardware & Tools',paint:'Paint & Coating',electrical:'Electrical',plumbing:'Plumbing'};
-function init(){
-  const p=new URLSearchParams(location.search);
-  const email=p.get('email');
-  if(!email){alert('No supplier specified');location.href='suppliers.html';return;}
-  const sups=JSON.parse(localStorage.getItem('registeredSuppliers'))||[];
-  supplier=sups.find(s=>s.email===email);
-  if(!supplier){alert('Supplier not found');location.href='suppliers.html';return;}
-  document.getElementById('supName').textContent=supplier.name;
-  document.getElementById('supLocation').textContent=supplier.location||'–';
-  document.getElementById('supDelivery').textContent=supplier.delivery||'Available';
-  document.getElementById('supCategory').textContent=(supplier.category||'').charAt(0).toUpperCase()+(supplier.category||'').slice(1);
-  document.getElementById('supSince').textContent=supplier.since?'Since '+supplier.since:'';
-  document.getElementById('contactEmail').textContent=supplier.email;
-  document.getElementById('contactPhone').textContent=supplier.contact||'N/A';
-  document.getElementById('contactAddress').textContent=supplier.address||'Partido Area';
-  document.getElementById('contactDelivery').textContent=supplier.delivery||'Available';
-  allMats=supplier.materials||[];
+<script type="module">
+import { supabase, getSupplierByEmail, escapeHtml } from './supabase-client.js';
+
+let supplier = null, allMats = [];
+const CAT_LABELS = {
+  cement: 'Cement & Aggregates',
+  steel: 'Steel & Rebars',
+  lumber: 'Lumber & Plywood',
+  hardware: 'Hardware & Tools',
+  paint: 'Paint & Coating',
+  electrical: 'Electrical',
+  plumbing: 'Plumbing'
+};
+
+async function init() {
+  const p = new URLSearchParams(location.search);
+  const email = p.get('email');
+  if (!email) { alert('No supplier specified'); location.href = 'suppliers.html'; return; }
+
+  supplier = await getSupplierByEmail(email);
+  if (!supplier) { alert('Supplier not found'); location.href = 'suppliers.html'; return; }
+
+  // Increment profile view counter (fire-and-forget)
+  supabase.rpc('increment_profile_views', { supplier_email: email }).catch(() => {
+    // Fallback: direct update (will only work if policies permit)
+    supabase.from('suppliers')
+      .update({ profile_views: (supplier.profile_views || 0) + 1 })
+      .eq('id', supplier.id);
+  });
+
+  document.getElementById('supName').textContent = supplier.name;
+  document.getElementById('supLocation').textContent = supplier.location || '–';
+  document.getElementById('supDelivery').textContent = supplier.delivery || 'Available';
+  document.getElementById('supCategory').textContent =
+    (supplier.category || '').charAt(0).toUpperCase() + (supplier.category || '').slice(1);
+  document.getElementById('supSince').textContent = supplier.since ? 'Since ' + supplier.since : '';
+  document.getElementById('contactEmail').textContent = supplier.email;
+  document.getElementById('contactPhone').textContent = supplier.contact || 'N/A';
+  document.getElementById('contactAddress').textContent = supplier.address || 'Partido Area';
+  document.getElementById('contactDelivery').textContent = supplier.delivery || 'Available';
+
+  // Load materials
+  const { data: mats, error } = await supabase
+    .from('materials')
+    .select('*')
+    .eq('supplier_id', supplier.id)
+    .order('created_at', { ascending: false });
+  if (error) console.error('materials load:', error);
+
+  // Normalize so existing render code works (desc instead of description)
+  allMats = (mats || []).map(m => ({
+    ...m,
+    desc: m.description || ''
+  }));
   renderMats(allMats);
+
+  // Realtime: refresh when supplier updates their catalog
+  supabase
+    .channel('catalog-' + supplier.id)
+    .on('postgres_changes',
+      { event: '*', schema: 'public', table: 'materials', filter: `supplier_id=eq.${supplier.id}` },
+      async () => {
+        const { data } = await supabase
+          .from('materials').select('*')
+          .eq('supplier_id', supplier.id)
+          .order('created_at', { ascending: false });
+        allMats = (data || []).map(m => ({ ...m, desc: m.description || '' }));
+        filterMats();
+      }
+    ).subscribe();
 }
-function renderMats(list){
-  const g=document.getElementById('matsGrid');
-  const e=document.getElementById('emptyState');
-  if(!list.length){g.innerHTML='';e.style.display='block';return;}
-  e.style.display='none';
-  g.innerHTML=list.map(m=>{
-    const qty=m.qty;
-    let sc,sl;
-    if(qty!==undefined){
-      const n=parseInt(qty);
-      sc=n===0?'out-of-stock':n<=10?'low-stock':'in-stock';
-      sl=n===0?'Out of Stock':n<=10?`Low Stock (${n} left)`:`In Stock (${n} available)`;
+
+function renderMats(list) {
+  const g = document.getElementById('matsGrid');
+  const e = document.getElementById('emptyState');
+  if (!list.length) { g.innerHTML = ''; e.style.display = 'block'; return; }
+  e.style.display = 'none';
+  g.innerHTML = list.map(m => {
+    const qty = m.qty;
+    let sc, sl;
+    if (qty !== undefined && qty !== null) {
+      const n = parseInt(qty);
+      sc = n === 0 ? 'out-of-stock' : n <= 10 ? 'low-stock' : 'in-stock';
+      sl = n === 0 ? 'Out of Stock' : n <= 10 ? `Low Stock (${n} left)` : `In Stock (${n} available)`;
     } else {
-      sc=m.stock==='out-of-stock'||m.stock==='discontinued'?'out-of-stock':m.stock==='low-stock'||m.stock==='very-low-stock'?'low-stock':'in-stock';
-      const slMap={'in-stock':'In Stock','high-stock':'In Stock','medium-stock':'In Stock','low-stock':'Low Stock','very-low-stock':'Low Stock','out-of-stock':'Out of Stock','pre-order':'Pre-Order','discontinued':'Discontinued'};
-      sl=slMap[m.stock]||'In Stock';
+      sc = m.stock === 'out-of-stock' || m.stock === 'discontinued'
+        ? 'out-of-stock'
+        : m.stock === 'low-stock' || m.stock === 'very-low-stock' ? 'low-stock' : 'in-stock';
+      const slMap = {
+        'in-stock': 'In Stock', 'high-stock': 'In Stock', 'medium-stock': 'In Stock',
+        'low-stock': 'Low Stock', 'very-low-stock': 'Low Stock',
+        'out-of-stock': 'Out of Stock', 'pre-order': 'Pre-Order', 'discontinued': 'Discontinued'
+      };
+      sl = slMap[m.stock] || 'In Stock';
     }
     return `<div class="mat-card">
-      <span class="mat-cat">${CAT_LABELS[m.category]||m.category}</span>
-      <h3>${m.name}</h3>
-      <div class="mat-desc">${m.desc||'No description available.'}</div>
+      <span class="mat-cat">${escapeHtml(CAT_LABELS[m.category] || m.category || 'Material')}</span>
+      <h3>${escapeHtml(m.name)}</h3>
+      <div class="mat-desc">${escapeHtml(m.desc || 'No description available.')}</div>
       <div class="mat-price">₱${parseFloat(m.price).toFixed(2)}</div>
-      <div class="mat-unit">per ${m.unit}</div>
+      <div class="mat-unit">per ${escapeHtml(m.unit)}</div>
       <span class="mat-stock ${sc}">${sl}</span>
     </div>`;
   }).join('');
 }
-function filterMats(){
-  const q=document.getElementById('searchMat').value.toLowerCase();
-  const cat=document.getElementById('catFilter').value;
-  const stock=document.getElementById('stockFilter').value;
-  const f=allMats.filter(m=>{
-    const mq=!q||m.name.toLowerCase().includes(q)||(m.desc&&m.desc.toLowerCase().includes(q));
-    const mc=cat==='all'||m.category===cat;
+
+function filterMats() {
+  const q = document.getElementById('searchMat').value.toLowerCase();
+  const cat = document.getElementById('catFilter').value;
+  const stock = document.getElementById('stockFilter').value;
+  const f = allMats.filter(m => {
+    const mq = !q || m.name.toLowerCase().includes(q) || (m.desc && m.desc.toLowerCase().includes(q));
+    const mc = cat === 'all' || m.category === cat;
     let sc;
-    if(m.qty!==undefined){const n=parseInt(m.qty);sc=n===0?'out-of-stock':n<=10?'low-stock':'in-stock';}
-    else{sc=m.stock==='out-of-stock'||m.stock==='discontinued'?'out-of-stock':m.stock==='low-stock'||m.stock==='very-low-stock'?'low-stock':'in-stock';}
-    const ms=stock==='all'||sc===stock;
-    return mq&&mc&&ms;
+    if (m.qty !== undefined && m.qty !== null) {
+      const n = parseInt(m.qty);
+      sc = n === 0 ? 'out-of-stock' : n <= 10 ? 'low-stock' : 'in-stock';
+    } else {
+      sc = m.stock === 'out-of-stock' || m.stock === 'discontinued'
+        ? 'out-of-stock'
+        : m.stock === 'low-stock' || m.stock === 'very-low-stock' ? 'low-stock' : 'in-stock';
+    }
+    const ms = stock === 'all' || sc === stock;
+    return mq && mc && ms;
   });
   renderMats(f);
 }
-function openModal(){document.getElementById('modalBack').classList.add('on');}
-function closeModal(){document.getElementById('modalBack').classList.remove('on');}
-function sendInquiry(e){
+
+function openModal() { document.getElementById('modalBack').classList.add('on'); }
+function closeModal() { document.getElementById('modalBack').classList.remove('on'); }
+
+function sendInquiry(e) {
   e.preventDefault();
-  const name=document.getElementById('iName').value;
-  const email=document.getElementById('iEmail').value;
-  const phone=document.getElementById('iPhone').value;
-  const msg=document.getElementById('iMsg').value;
-  alert(`Inquiry sent to ${supplier.name}!\n\nFrom: ${name} (${email})\nPhone: ${phone||'N/A'}\n\nMessage: ${msg}\n\nThe supplier will contact you soon.`);
-  closeModal();e.target.reset();
+  const name = document.getElementById('iName').value;
+  const email = document.getElementById('iEmail').value;
+  const phone = document.getElementById('iPhone').value;
+  const msg = document.getElementById('iMsg').value;
+  alert(`Inquiry sent to ${supplier.name}!\n\nFrom: ${name} (${email})\nPhone: ${phone || 'N/A'}\n\nMessage: ${msg}\n\nThe supplier will contact you soon.`);
+  closeModal(); e.target.reset();
 }
-function callSupplier(){
-  if(supplier.contact&&supplier.contact!=='N/A'){location.href='tel:'+supplier.contact;}
-  else{alert('Phone number not available.');}
+
+function callSupplier() {
+  if (supplier.contact && supplier.contact !== 'N/A') location.href = 'tel:' + supplier.contact;
+  else alert('Phone number not available.');
 }
-function emailSupplier(){
-  const subj=encodeURIComponent('Inquiry – '+supplier.name);
-  location.href='mailto:'+supplier.email+'?subject='+subj;
+
+function emailSupplier() {
+  const subj = encodeURIComponent('Inquiry – ' + supplier.name);
+  location.href = 'mailto:' + supplier.email + '?subject=' + subj;
 }
-document.getElementById('modalBack').addEventListener('click',function(e){if(e.target===this)closeModal();});
+
+document.getElementById('modalBack').addEventListener('click', function (e) {
+  if (e.target === this) closeModal();
+});
+
+// Expose to inline handlers
+window.filterMats = filterMats;
+window.openModal = openModal;
+window.closeModal = closeModal;
+window.sendInquiry = sendInquiry;
+window.callSupplier = callSupplier;
+window.emailSupplier = emailSupplier;
+
 init();
 </script>
 </body>

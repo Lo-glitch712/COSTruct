@@ -335,191 +335,254 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(-
   </div>
 </div>
 
-<script>
-let supplier=null,editIdx=-1;
-const CAT_LABELS={cement:'Cement & Aggregates',steel:'Steel & Rebars',lumber:'Lumber & Plywood',hardware:'Hardware & Tools',paint:'Paint & Coating',electrical:'Electrical',plumbing:'Plumbing'};
+<script type="module">
+import { supabase, getCurrentUser, getSupplierByUserId, escapeHtml } from './supabase-client.js';
 
-function init(){
-  const d=localStorage.getItem('currentUser');
-  if(!d){location.href='login.html';return;}
-  const u=JSON.parse(d);
-  if(u.role!=='supplier'){location.href='index.html';return;}
-  const sups=JSON.parse(localStorage.getItem('registeredSuppliers'))||[];
-  supplier=sups.find(s=>s.email===u.email);
-  if(!supplier){location.href='index.html';return;}
-  document.getElementById('topName').textContent=supplier.name;
-  document.getElementById('topAvatar').textContent=(supplier.ownerName||supplier.name||'S').charAt(0).toUpperCase();
-  document.getElementById('welcomeTitle').textContent='Welcome, '+supplier.ownerName||supplier.name;
+let supplier = null;         // suppliers row
+let materials = [];          // materials rows for this supplier
+let editId = null;           // material id being edited
+let currentUser = null;
+
+const CAT_LABELS = {
+  cement: 'Cement & Aggregates', steel: 'Steel & Rebars', lumber: 'Lumber & Plywood',
+  hardware: 'Hardware & Tools', paint: 'Paint & Coating',
+  electrical: 'Electrical', plumbing: 'Plumbing'
+};
+
+async function init() {
+  currentUser = await getCurrentUser();
+  if (!currentUser) { location.href = 'login.html'; return; }
+  if (currentUser.role !== 'supplier') { location.href = 'index.html'; return; }
+
+  supplier = await getSupplierByUserId(currentUser.id);
+  if (!supplier) { alert('Your supplier record is missing. Please contact support.'); location.href = 'index.html'; return; }
+
+  document.getElementById('topName').textContent = supplier.name;
+  document.getElementById('topAvatar').textContent = (supplier.owner_name || supplier.name || 'S').charAt(0).toUpperCase();
+  document.getElementById('welcomeTitle').textContent = 'Welcome, ' + (supplier.owner_name || supplier.name);
+
+  await loadMaterials();
   loadProfile();
   refreshStats();
   renderMatTable();
   renderRecent();
 }
 
-function toggleNav(){
+async function loadMaterials() {
+  const { data, error } = await supabase
+    .from('materials')
+    .select('*')
+    .eq('supplier_id', supplier.id)
+    .order('created_at', { ascending: false });
+  if (error) { console.error('loadMaterials:', error); return; }
+  materials = data || [];
+}
+
+function toggleNav() {
   document.getElementById('sideNav').classList.toggle('on');
   document.getElementById('mobOverlay').classList.toggle('on');
 }
 
-function showPanel(id){
-  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
-  document.getElementById('panel-'+id).classList.add('active');
-  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
-  const nav=document.querySelector(`.nav-item[onclick="showPanel('${id}')"]`);
-  if(nav)nav.classList.add('active');
+function showPanel(id) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('panel-' + id).classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  const nav = document.querySelector(`.nav-item[onclick="showPanel('${id}')"]`);
+  if (nav) nav.classList.add('active');
   document.getElementById('sideNav').classList.remove('on');
   document.getElementById('mobOverlay').classList.remove('on');
-  if(id==='materials')renderMatTable();
-  if(id==='overview'){refreshStats();renderRecent();}
+  if (id === 'materials') renderMatTable();
+  if (id === 'overview') { refreshStats(); renderRecent(); }
 }
 
-function saveSupplier(){
-  const sups=JSON.parse(localStorage.getItem('registeredSuppliers'))||[];
-  const idx=sups.findIndex(s=>s.email===supplier.email);
-  if(idx>-1){sups[idx]=supplier;localStorage.setItem('registeredSuppliers',JSON.stringify(sups));}
-  const users=JSON.parse(localStorage.getItem('registeredUsers'))||[];
-  const ui=users.findIndex(u=>u.email===supplier.email);
-  if(ui>-1){users[ui]=supplier;localStorage.setItem('registeredUsers',JSON.stringify(users));}
-  localStorage.setItem('currentUser',JSON.stringify(supplier));
+function refreshStats() {
+  document.getElementById('statTotal').textContent = materials.length;
+  document.getElementById('statProfileViews').textContent = supplier.profile_views ?? 0;
 }
 
-function qtyToStock(qty){
-  const n=parseInt(qty);
-  if(isNaN(n)||n===0) return 'out-of-stock';
-  if(n<=10) return 'low-stock';
-  return 'in-stock';
-}
-function updateStockHint(inputId,hintId){
-  const n=parseInt(document.getElementById(inputId).value);
-  const el=document.getElementById(hintId);
-  if(isNaN(n)||document.getElementById(inputId).value===''){el.textContent='';return;}
-  if(n===0){el.innerHTML='<span style="color:#7b2424;font-weight:600">Out of Stock</span>';}
-  else if(n<=10){el.innerHTML=`<span style="color:#854d0e;font-weight:600"> Low Stock</span>`;}
-  else{el.innerHTML=`<span style="color:var(--g700);font-weight:600"> In Stock</span>`;}
-}
-
-function refreshStats(){
-  const mats=supplier.materials||[];
-  document.getElementById('statTotal').textContent=mats.length;
-  const views=parseInt(localStorage.getItem('profileViews_'+(supplier.email||''))||'0');
-  document.getElementById('statProfileViews').textContent=views;
-}
-
-function stockBadge(qty){
-  const s=qtyToStock(qty);
-  const out=s==='out-of-stock';
-  const low=s==='low-stock';
-  const cls=out?'badge-red':low?'badge-amber':'badge-green';
-  const lbl=out?'Out of Stock':low?'Low Stock':'In Stock';
+function stockBadge(qty) {
+  const n = parseInt(qty);
+  if (isNaN(n) || qty === null || qty === undefined) return '';
+  const out = n === 0, low = n > 0 && n <= 10;
+  const cls = out ? 'badge-red' : low ? 'badge-amber' : 'badge-green';
+  const lbl = out ? 'Out of Stock' : low ? 'Low Stock' : 'In Stock';
   return `<span class="badge ${cls}">${lbl}</span>`;
 }
 
-function renderMatTable(){
-  const mats=supplier.materials||[];
-  const body=document.getElementById('matBody');
-  const empty=document.getElementById('matEmpty');
-  if(!mats.length){body.innerHTML='';empty.style.display='block';return;}
-  empty.style.display='none';
-  body.innerHTML=mats.map((m,i)=>`<tr>
-    <td style="font-weight:600">${m.name}</td>
+function renderMatTable() {
+  const body = document.getElementById('matBody');
+  const empty = document.getElementById('matEmpty');
+  if (!materials.length) { body.innerHTML = ''; empty.style.display = 'block'; return; }
+  empty.style.display = 'none';
+  body.innerHTML = materials.map(m => `<tr>
+    <td style="font-weight:600">${escapeHtml(m.name)}</td>
     <td class="price-tag">₱${parseFloat(m.price).toFixed(2)}</td>
-    <td style="color:var(--ink3)">${m.unit}</td>
-    <td style="color:var(--ink3);font-size:13px">${m.desc||'—'}</td>
+    <td style="color:var(--ink3)">${escapeHtml(m.unit)}</td>
+    <td style="color:var(--ink3);font-size:13px">${escapeHtml(m.description || '—')}</td>
     <td style="display:flex;gap:6px;justify-content:flex-end">
-      <button class="btn-outline btn-sm" onclick="openEdit(${i})">Edit</button>
-      <button class="btn-danger" onclick="deleteMat(${i})">Delete</button>
+      <button class="btn-outline btn-sm" data-edit="${m.id}">Edit</button>
+      <button class="btn-danger" data-del="${m.id}">Delete</button>
     </td>
   </tr>`).join('');
+
+  // Wire up buttons (avoid inline onclick with dynamic ids)
+  body.querySelectorAll('[data-edit]').forEach(b =>
+    b.addEventListener('click', () => openEdit(b.getAttribute('data-edit'))));
+  body.querySelectorAll('[data-del]').forEach(b =>
+    b.addEventListener('click', () => deleteMat(b.getAttribute('data-del'))));
 }
 
-function renderRecent(){
-  const mats=(supplier.materials||[]).slice(-4).reverse();
-  const el=document.getElementById('recentMats');
-  if(!mats.length){el.innerHTML='<p style="color:var(--ink3);font-size:14px">No materials yet. <a href="#" onclick="showPanel(\'addMat\')" style="color:var(--g600);font-weight:600">Add your first material →</a></p>';return;}
-  el.innerHTML=`<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px">${mats.map(m=>`
+function renderRecent() {
+  const mats = materials.slice(0, 4);
+  const el = document.getElementById('recentMats');
+  if (!mats.length) {
+    el.innerHTML = `<p style="color:var(--ink3);font-size:14px">No materials yet. <a href="#" onclick="showPanel('addMat')" style="color:var(--g600);font-weight:600">Add your first material →</a></p>`;
+    return;
+  }
+  el.innerHTML = `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px">${mats.map(m => `
     <div style="border:1px solid var(--border);border-radius:10px;padding:14px">
-      <div style="font-size:14px;font-weight:700;color:var(--ink);margin-bottom:4px">${m.name}</div>
+      <div style="font-size:14px;font-weight:700;color:var(--ink);margin-bottom:4px">${escapeHtml(m.name)}</div>
       <div style="font-family:'Fraunces',serif;font-size:18px;font-weight:700;color:var(--g800)">₱${parseFloat(m.price).toFixed(2)}</div>
-      <div style="font-size:11px;color:var(--ink3);margin-top:2px">per ${m.unit}</div>
+      <div style="font-size:11px;color:var(--ink3);margin-top:2px">per ${escapeHtml(m.unit)}</div>
     </div>
   `).join('')}</div>`;
 }
 
-function addMaterial(){
-  const name=document.getElementById('mName').value.trim();
-  const price=document.getElementById('mPrice').value;
-  if(!name||!price){alert('Please fill in the material name and price.');return;}
-  const mat={name,price:parseFloat(price),unit:document.getElementById('mUnit').value,desc:document.getElementById('mDesc').value.trim()};
-  if(!supplier.materials)supplier.materials=[];
-  supplier.materials.push(mat);
-  saveSupplier();
-  alert(` "${name}" added to your catalog.`);
-  document.getElementById('mName').value='';document.getElementById('mPrice').value='';document.getElementById('mDesc').value='';
+async function addMaterial() {
+  const name = document.getElementById('mName').value.trim();
+  const price = document.getElementById('mPrice').value;
+  if (!name || !price) { alert('Please fill in the material name and price.'); return; }
+
+  const { error } = await supabase.from('materials').insert({
+    supplier_id: supplier.id,
+    name,
+    price: parseFloat(price),
+    unit: document.getElementById('mUnit').value,
+    description: document.getElementById('mDesc').value.trim() || null
+  });
+  if (error) { alert('Failed to add material: ' + error.message); return; }
+
+  await loadMaterials();
+  alert(`"${name}" added to your catalog.`);
+  document.getElementById('mName').value = '';
+  document.getElementById('mPrice').value = '';
+  document.getElementById('mDesc').value = '';
+  refreshStats();
   showPanel('materials');
 }
 
-function openEdit(i){
-  editIdx=i;
-  const m=supplier.materials[i];
-  document.getElementById('eName').value=m.name;
-  document.getElementById('ePrice').value=m.price;
-  document.getElementById('eUnit').value=m.unit;
-  document.getElementById('eDesc').value=m.desc||'';
+function openEdit(id) {
+  const m = materials.find(x => x.id === id);
+  if (!m) return;
+  editId = id;
+  document.getElementById('eName').value = m.name;
+  document.getElementById('ePrice').value = m.price;
+  document.getElementById('eUnit').value = m.unit;
+  document.getElementById('eDesc').value = m.description || '';
   document.getElementById('editModal').classList.add('on');
 }
-function closeEdit(){document.getElementById('editModal').classList.remove('on');}
-function saveEdit(){
-  supplier.materials[editIdx]={name:document.getElementById('eName').value,price:parseFloat(document.getElementById('ePrice').value),unit:document.getElementById('eUnit').value,desc:document.getElementById('eDesc').value};
-  saveSupplier();closeEdit();renderMatTable();refreshStats();
+function closeEdit() { document.getElementById('editModal').classList.remove('on'); }
+
+async function saveEdit() {
+  if (!editId) return;
+  const { error } = await supabase.from('materials')
+    .update({
+      name: document.getElementById('eName').value,
+      price: parseFloat(document.getElementById('ePrice').value),
+      unit: document.getElementById('eUnit').value,
+      description: document.getElementById('eDesc').value || null
+    })
+    .eq('id', editId);
+  if (error) { alert('Failed to save: ' + error.message); return; }
+
+  await loadMaterials();
+  closeEdit();
+  renderMatTable();
+  refreshStats();
 }
 
-function deleteMat(i){
-  if(!confirm('Delete this material?'))return;
-  supplier.materials.splice(i,1);saveSupplier();renderMatTable();refreshStats();
+async function deleteMat(id) {
+  if (!confirm('Delete this material?')) return;
+  const { error } = await supabase.from('materials').delete().eq('id', id);
+  if (error) { alert('Failed to delete: ' + error.message); return; }
+  await loadMaterials();
+  renderMatTable();
+  refreshStats();
 }
 
-function loadProfile(){
-  document.getElementById('pStoreName').value=supplier.name||'';
-  document.getElementById('pOwner').value=supplier.ownerName||'';
-  document.getElementById('pCategory').value=supplier.category||'construction';
-  document.getElementById('pLocation').value=supplier.location||'Tigaon';
-  document.getElementById('pContact').value=supplier.contact||'';
-  document.getElementById('pDelivery').value=supplier.delivery||'Available';
-  document.getElementById('pAddress').value=supplier.address||'';
+function loadProfile() {
+  document.getElementById('pStoreName').value = supplier.name || '';
+  document.getElementById('pOwner').value = supplier.owner_name || '';
+  document.getElementById('pCategory').value = supplier.category || 'construction';
+  document.getElementById('pLocation').value = supplier.location || 'Tigaon';
+  document.getElementById('pContact').value = supplier.contact || '';
+  document.getElementById('pDelivery').value = supplier.delivery || 'Available';
+  document.getElementById('pAddress').value = supplier.address || '';
 }
-let profileEditing=false;
-function toggleEditProfile(){
-  profileEditing=true;
-  const fields=['pStoreName','pOwner','pCategory','pLocation','pContact','pDelivery','pAddress'];
-  fields.forEach(id=>{document.getElementById(id).disabled=false;});
-  document.getElementById('profileSaveBtns').style.display='flex';
-  document.getElementById('editProfileBtn').style.display='none';
-  document.getElementById('profileSubtitle').textContent='Update your business information';
+
+let profileEditing = false;
+function toggleEditProfile() {
+  profileEditing = true;
+  ['pStoreName','pOwner','pCategory','pLocation','pContact','pDelivery','pAddress']
+    .forEach(id => { document.getElementById(id).disabled = false; });
+  document.getElementById('profileSaveBtns').style.display = 'flex';
+  document.getElementById('editProfileBtn').style.display = 'none';
+  document.getElementById('profileSubtitle').textContent = 'Update your business information';
 }
-function cancelEditProfile(){
-  profileEditing=false;
+
+function cancelEditProfile() {
+  profileEditing = false;
   loadProfile();
-  const fields=['pStoreName','pOwner','pCategory','pLocation','pContact','pDelivery','pAddress'];
-  fields.forEach(id=>{document.getElementById(id).disabled=true;});
-  document.getElementById('profileSaveBtns').style.display='none';
-  document.getElementById('editProfileBtn').style.display='';
-  document.getElementById('profileSubtitle').textContent='Your business information';
+  ['pStoreName','pOwner','pCategory','pLocation','pContact','pDelivery','pAddress']
+    .forEach(id => { document.getElementById(id).disabled = true; });
+  document.getElementById('profileSaveBtns').style.display = 'none';
+  document.getElementById('editProfileBtn').style.display = '';
+  document.getElementById('profileSubtitle').textContent = 'Your business information';
 }
-function saveProfile(){
-  supplier.name=document.getElementById('pStoreName').value;
-  supplier.ownerName=document.getElementById('pOwner').value;
-  supplier.category=document.getElementById('pCategory').value;
-  supplier.location=document.getElementById('pLocation').value;
-  supplier.contact=document.getElementById('pContact').value;
-  supplier.delivery=document.getElementById('pDelivery').value;
-  supplier.address=document.getElementById('pAddress').value;
-  saveSupplier();
-  document.getElementById('topName').textContent=supplier.name;
+
+async function saveProfile() {
+  const patch = {
+    name: document.getElementById('pStoreName').value,
+    owner_name: document.getElementById('pOwner').value,
+    category: document.getElementById('pCategory').value,
+    location: document.getElementById('pLocation').value,
+    contact: document.getElementById('pContact').value,
+    delivery: document.getElementById('pDelivery').value,
+    address: document.getElementById('pAddress').value
+  };
+  const { data, error } = await supabase.from('suppliers')
+    .update(patch).eq('id', supplier.id).select().maybeSingle();
+  if (error) { alert('Failed to save: ' + error.message); return; }
+
+  supplier = data || { ...supplier, ...patch };
+  document.getElementById('topName').textContent = supplier.name;
   cancelEditProfile();
   alert('Profile saved successfully!');
 }
-function doLogout(){if(confirm('Logout?')){localStorage.removeItem('currentUser');location.href='index.html';}}
-document.getElementById('editModal').addEventListener('click',function(e){if(e.target===this)closeEdit();});
+
+async function doLogout() {
+  if (!confirm('Logout?')) return;
+  await supabase.auth.signOut();
+  location.href = 'index.html';
+}
+
+document.getElementById('editModal').addEventListener('click', function (e) {
+  if (e.target === this) closeEdit();
+});
+
+// Expose for inline onclick handlers
+window.toggleNav = toggleNav;
+window.showPanel = showPanel;
+window.addMaterial = addMaterial;
+window.openEdit = openEdit;
+window.closeEdit = closeEdit;
+window.saveEdit = saveEdit;
+window.deleteMat = deleteMat;
+window.toggleEditProfile = toggleEditProfile;
+window.cancelEditProfile = cancelEditProfile;
+window.saveProfile = saveProfile;
+window.doLogout = doLogout;
+
 init();
 </script>
 </body>
