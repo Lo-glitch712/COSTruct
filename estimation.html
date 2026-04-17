@@ -380,30 +380,47 @@ main{padding:16px 16px 100px;max-width:600px;margin:0 auto}
     </div>
   </div>
 
-  <!-- ── FLOOR AREA ── -->
+  <!-- ── FLOORING AREA ── -->
   <div class="card">
-    <div class="card-title"><span class="ct-icon">D</span> Floor Area / Dimensions</div>
-    <div class="info-note">Enter floor dimensions. Area = Length × Width. Add more floors below.</div>
+    <div class="card-title"><span class="ct-icon">D</span> Flooring</div>
+    <div class="info-note">Enter flooring dimensions. Area = Length × Width. Adding flooring is optional.</div>
 
-    <!-- Slab sub-section -->
-    <div style="font-size:11px;font-weight:700;color:var(--g700);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid var(--border)">Slab Formula</div>
+    <!-- Dimension sub-section -->
+    <div style="font-size:11px;font-weight:700;color:var(--g700);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid var(--border)">Dimension</div>
     <div class="field-row-3">
-      <div class="field"><label>Length (m)</label><input type="number" id="fLength" placeholder="10" step="0.1" min="0" inputmode="decimal" oninput="updateRecs();updateSlabArea()"></div>
-      <div class="field"><label>Width (m)</label><input type="number" id="fWidth" placeholder="8" step="0.1" min="0" inputmode="decimal" oninput="updateRecs();updateSlabArea()"></div>
-      <div class="field"><label>Thickness (m)</label><input type="number" id="slabThick" placeholder="0.1" step="0.01" min="0" value="0.1" inputmode="decimal" oninput="updateSlabArea()"></div>
+      <div class="field"><label>Length (m)</label><input type="number" id="fLength" placeholder="10" step="0.1" min="0" inputmode="decimal" oninput="updateFlooringArea()"></div>
+      <div class="field"><label>Width (m)</label><input type="number" id="fWidth" placeholder="8" step="0.1" min="0" inputmode="decimal" oninput="updateFlooringArea()"></div>
+      <div class="field"><label>Thickness (m)</label><input type="number" id="fThickness" placeholder="0.1" step="0.01" min="0" inputmode="decimal" oninput="updateFlooringArea()"></div>
+    </div>
+    <div class="rec-box" id="flooringAreaBox">
+      <div class="rec-title">Flooring Computation</div>
+      <div class="rec-row"><span class="rec-label">Flooring Area</span><span class="rec-val" id="flooringAreaVal">— m²</span></div>
+      <div class="rec-row"><span class="rec-label">Slab Area</span><span class="rec-val" id="slabAreaVal">— m²</span></div>
+    </div>
+
+    <!-- Flooring list (optional) -->
+    <div style="font-size:11px;font-weight:700;color:var(--g700);text-transform:uppercase;letter-spacing:.5px;margin:14px 0 8px;padding-top:10px;border-top:1px solid var(--border)">Flooring <span style="font-weight:500;text-transform:none;letter-spacing:0;color:var(--ink3)">(optional)</span></div>
+    <div class="floors-list" id="floorsList"></div>
+    <button class="add-floor-btn" onclick="addFloor()">+ Add Flooring</button>
+  </div>
+
+  <!-- ── SLAB ── -->
+  <div class="card">
+    <div class="card-title"><span class="ct-icon">S</span> Slab</div>
+    <div class="info-note">Enter slab dimensions. Volume = Length × Width × Thickness.</div>
+
+    <!-- Dimension sub-section -->
+    <div style="font-size:11px;font-weight:700;color:var(--g700);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid var(--border)">Dimension</div>
+    <div class="field-row">
+      <div class="field"><label>Length (m)</label><input type="number" id="sLength" placeholder="10" step="0.1" min="0" inputmode="decimal" oninput="updateSlabSection()"></div>
+      <div class="field"><label>Width (m)</label><input type="number" id="sWidth" placeholder="8" step="0.1" min="0" inputmode="decimal" oninput="updateSlabSection()"></div>
+      <div class="field"><label>Thickness (m)</label><input type="number" id="sThick" placeholder="0.1" step="0.01" min="0" inputmode="decimal" oninput="updateSlabSection()"></div>
     </div>
     <div class="rec-box" id="slabAreaBox">
       <div class="rec-title">Slab Computation</div>
-      <div class="rec-row"><span class="rec-label">Floor Area</span><span class="rec-val" id="slabAreaVal">— m²</span></div>
+      <div class="rec-row"><span class="rec-label">Slab Area</span><span class="rec-val" id="slabAreaVal">— m²</span></div>
       <div class="rec-row"><span class="rec-label">Slab Volume</span><span class="rec-val" id="slabVolVal">— m³</span></div>
     </div>
-
-    <div class="field"><label>Wall Height (m)</label><input type="number" id="wHeight" placeholder="3" step="0.1" min="0" inputmode="decimal" oninput="updateRecs()"></div>
-
-    <!-- Floors list -->
-    <div style="font-size:11px;font-weight:700;color:var(--g700);text-transform:uppercase;letter-spacing:.5px;margin:14px 0 8px;padding-top:10px;border-top:1px solid var(--border)">Floors</div>
-    <div class="floors-list" id="floorsList"></div>
-    <button class="add-floor-btn" onclick="addFloor()">+ Add Floor</button>
   </div>
 
   <!-- ── STRUCTURAL ELEMENTS ── -->
@@ -432,14 +449,14 @@ main{padding:16px 16px 100px;max-width:600px;margin:0 auto}
 
   <!-- ── WALLS & PLASTER ── -->
   <div class="card">
-    <div class="card-title"><span class="ct-icon">W</span> Walls &amp; Plaster Finish</div>
+    <div class="card-title"><span class="ct-icon">W</span> Walls &amp; Finishes</div>
     <div id="wallsList" style="display:flex;flex-direction:column;gap:12px;margin-bottom:10px"></div>
     <button class="add-floor-btn" onclick="addWall()">+ Add Wall</button>
     <input type="hidden" id="wallType" value="chb">
     <input type="hidden" id="chbSize" value="4">
   </div>
 
-  <!-- Hidden defaults (Finishes section removed) -->
+  <!-- Hidden defaults -->
   <input type="hidden" id="tileSize" value="none">
   <input type="hidden" id="roofing" value="no">
 </div>
@@ -508,19 +525,34 @@ function showCementFields(){
   document.getElementById('pozzolanRow').style.display=(t==='pozzolan'||t==='both')?'block':'none';
 }
 
-// ── Slab area live display ──
-function updateSlabArea(){
+// ── Flooring area live display ──
+function updateFlooringArea(){
   const l=parseFloat(document.getElementById('fLength').value)||0;
   const w=parseFloat(document.getElementById('fWidth').value)||0;
-  const t=parseFloat(document.getElementById('slabThick').value)||0;
-  const area=l*w, vol=area*t;
+  const t=parseFloat(document.getElementById('fThickness').value)||0;
+  const area=l*w;
+  const vol=area*t;
+  document.getElementById('flooringAreaVal').textContent=area>0?area.toFixed(2)+' m²':'— m²';
+  document.getElementById('slabAreaVal').textContent=vol>0?vol.toFixed(3)+' m³':'— m³';
+}
+
+// ── Slab section live display ──
+function updateSlabSection(){
+  const l=parseFloat(document.getElementById('sLength').value)||0;
+  const w=parseFloat(document.getElementById('sWidth').value)||0;
+  const t=parseFloat(document.getElementById('sThick').value)||0;
+  const area=l*w;
+  const vol=area*t;
   document.getElementById('slabAreaVal').textContent=area>0?area.toFixed(2)+' m²':'— m²';
   document.getElementById('slabVolVal').textContent=vol>0?vol.toFixed(3)+' m³':'— m³';
 }
 
+// Alias kept for backwards compatibility
+function updateSlabArea(){updateFlooringArea();}
+
 // Recommendations
 function updateRecs(){
-  updateSlabArea();
+  updateFlooringArea();
 }
 
 function selTog(groupId,btn,value){
@@ -552,7 +584,6 @@ function updateFloorField(id,field,val){
   renderFloors();
 }
 function deleteFloor(idx){
-  if(floors.length<=1){alert('At least one floor required.');return;}
   floors.splice(idx,1);
   floors.forEach((f,i)=>{f.num=i+1;f.label='Floor '+(i+1);});
   renderFloors();
@@ -592,7 +623,7 @@ function renderFloors(){
             style="width:100%;padding:9px 10px;border:1.5px solid var(--border);border-radius:9px;font-family:inherit;font-size:14px;color:var(--ink);background:#fff;outline:none">
         </div>
       </div>
-      ${area?`<div style="font-size:11px;color:var(--g700);font-weight:600">Area: ${area} m² · Slab Vol: ${vol} m³</div>`:''}
+      ${area?`<div style="font-size:11px;color:var(--g700);font-weight:600">Slab Vol: ${vol} m³ · Area: ${area} m²</div>`:''}
     </div>`;
   }).join('');
 }
@@ -636,7 +667,7 @@ function renderColumns(){
         </div>
       </div>
       <div style="margin-top:6px;font-size:11px;color:var(--g700);font-weight:600">
-        Vol/col: ${((c.dimW/1000)*(c.dimH/1000)*c.height).toFixed(3)} m³ · Total: ${(c.qty*(c.dimW/1000)*(c.dimH/1000)*c.height).toFixed(3)} m³
+        Volume: ${((c.dimW/1000)*(c.dimH/1000)*c.height).toFixed(3)} m³ · Total: ${(c.qty*(c.dimW/1000)*(c.dimH/1000)*c.height).toFixed(3)} m³
       </div>
     </div>`).join('');
 }
@@ -680,7 +711,7 @@ function renderBeams(){
         </div>
       </div>
       <div style="margin-top:6px;font-size:11px;color:var(--g700);font-weight:600">
-        Vol/beam: ${((b.depth/1000)*(b.width/1000)*b.length).toFixed(3)} m³ · Total: ${(b.qty*(b.depth/1000)*(b.width/1000)*b.length).toFixed(3)} m³
+        Volume: ${(b.qty*(b.depth/1000)*(b.width/1000)*b.length).toFixed(3)} m³
       </div>
     </div>`).join('');
 }
@@ -689,7 +720,7 @@ function renderBeams(){
 let wallEntries=[],wallEntryId=0;
 function addWall(){
   const id=++wallEntryId;
-  wallEntries.push({id,type:'chb',length:0,width:0,height:0,chbSize:'4'});
+  wallEntries.push({id,type:'chb',length:0,width:0});
   renderWalls();
   setTimeout(()=>{const el=document.getElementById('wlen_'+id);if(el)el.focus();},50);
 }
@@ -700,7 +731,7 @@ function renderWalls(){
   if(!el)return;
   if(!wallEntries.length){el.innerHTML='<div style="font-size:13px;color:var(--ink3);padding:4px 0;">No walls added yet.</div>';return;}
   el.innerHTML=wallEntries.map(w=>{
-    const area=(parseFloat(w.length)||0)*(parseFloat(w.height)||0);
+    const area=(parseFloat(w.length)||0)*(parseFloat(w.width)||0);
     const chbCount=w.type==='chb'?Math.ceil(area*12.5):0;
     return `
     <div style="background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:12px 14px">
@@ -709,10 +740,11 @@ function renderWalls(){
         <button onclick="removeWall(${w.id})" style="background:none;border:none;color:#ccc;font-size:18px;cursor:pointer;padding:0 4px" onmouseover="this.style.color='var(--red)'" onmouseout="this.style.color='#ccc'">✕</button>
       </div>
       <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap">
-        <button onclick="updateWallField(${w.id},'type','chb')" style="flex:1;min-width:80px;padding:8px;border:1.5px solid ${w.type==='chb'?'var(--g600)':'var(--border)'};border-radius:9px;background:${w.type==='chb'?'var(--g50)':'#fff'};color:${w.type==='chb'?'var(--g800)':'var(--ink3)'};font-family:inherit;font-size:13px;font-weight:700;cursor:pointer">CHB</button>
-        <button onclick="updateWallField(${w.id},'type','concrete')" style="flex:1;min-width:80px;padding:8px;border:1.5px solid ${w.type==='concrete'?'var(--g600)':'var(--border)'};border-radius:9px;background:${w.type==='concrete'?'var(--g50)':'#fff'};color:${w.type==='concrete'?'var(--g800)':'var(--ink3)'};font-family:inherit;font-size:13px;font-weight:700;cursor:pointer">Concrete</button>
+        <button onclick="updateWallField(${w.id},'type','chb')" style="flex:1;min-width:70px;padding:8px;border:1.5px solid ${w.type==='chb'?'var(--g600)':'var(--border)'};border-radius:9px;background:${w.type==='chb'?'var(--g50)':'#fff'};color:${w.type==='chb'?'var(--g800)':'var(--ink3)'};font-family:inherit;font-size:13px;font-weight:700;cursor:pointer">CHB</button>
+        <button onclick="updateWallField(${w.id},'type','mortar')" style="flex:1;min-width:70px;padding:8px;border:1.5px solid ${w.type==='mortar'?'var(--g600)':'var(--border)'};border-radius:9px;background:${w.type==='mortar'?'var(--g50)':'#fff'};color:${w.type==='mortar'?'var(--g800)':'var(--ink3)'};font-family:inherit;font-size:13px;font-weight:700;cursor:pointer">Mortar</button>
+        <button onclick="updateWallField(${w.id},'type','plaster')" style="flex:1;min-width:70px;padding:8px;border:1.5px solid ${w.type==='plaster'?'var(--g600)':'var(--border)'};border-radius:9px;background:${w.type==='plaster'?'var(--g50)':'#fff'};color:${w.type==='plaster'?'var(--g800)':'var(--ink3)'};font-family:inherit;font-size:13px;font-weight:700;cursor:pointer">Plaster</button>
       </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:8px">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
         <div>
           <div style="font-size:10px;font-weight:700;color:var(--ink3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px">Length (m)</div>
           <input id="wlen_${w.id}" type="number" value="${w.length||''}" placeholder="0" step="0.1" min="0" inputmode="decimal" oninput="updateWallField(${w.id},'length',this.value)" style="width:100%;padding:9px 10px;border:1.5px solid var(--border);border-radius:9px;font-family:inherit;font-size:14px;color:var(--ink);background:#fff;outline:none">
@@ -721,18 +753,9 @@ function renderWalls(){
           <div style="font-size:10px;font-weight:700;color:var(--ink3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px">Width (m)</div>
           <input type="number" value="${w.width||''}" placeholder="0" step="0.1" min="0" inputmode="decimal" oninput="updateWallField(${w.id},'width',this.value)" style="width:100%;padding:9px 10px;border:1.5px solid var(--border);border-radius:9px;font-family:inherit;font-size:14px;color:var(--ink);background:#fff;outline:none">
         </div>
-        <div>
-          <div style="font-size:10px;font-weight:700;color:var(--ink3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px">Height (m)</div>
-          <input type="number" value="${w.height||''}" placeholder="0" step="0.1" min="0" inputmode="decimal" oninput="updateWallField(${w.id},'height',this.value)" style="width:100%;padding:9px 10px;border:1.5px solid var(--border);border-radius:9px;font-family:inherit;font-size:14px;color:var(--ink);background:#fff;outline:none">
-        </div>
       </div>
-      ${w.type==='chb'?`
-      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px">
-        <button onclick="updateWallField(${w.id},'chbSize','4')" style="flex:1;min-width:80px;padding:7px;border:1.5px solid ${w.chbSize==='4'?'var(--g600)':'var(--border)'};border-radius:8px;background:${w.chbSize==='4'?'var(--g50)':'#fff'};color:${w.chbSize==='4'?'var(--g800)':'var(--ink3)'};font-family:inherit;font-size:12px;font-weight:700;cursor:pointer">4" CHB (Default)</button>
-        <button onclick="updateWallField(${w.id},'chbSize','6')" style="flex:1;min-width:80px;padding:7px;border:1.5px solid ${w.chbSize==='6'?'var(--g600)':'var(--border)'};border-radius:8px;background:${w.chbSize==='6'?'var(--g50)':'#fff'};color:${w.chbSize==='6'?'var(--g800)':'var(--ink3)'};font-family:inherit;font-size:12px;font-weight:700;cursor:pointer">6" CHB</button>
-      </div>`:''}
       <div style="font-size:11px;color:var(--g700);font-weight:600">
-        Wall Area: ${area.toFixed(2)} m²${w.type==='chb'&&chbCount>0?' · '+chbCount+' pcs CHB ('+w.chbSize+'")':''}
+        Wall Area: ${area.toFixed(2)} m²${w.type==='chb'&&chbCount>0?' · '+chbCount+' pcs CHB':''}
       </div>
     </div>`}).join('');
 }
@@ -757,9 +780,6 @@ function validateStep(s){
     if(!selectedSupplier){alert('Please select a supplier to use their material prices.');return false;}
   }
   if(s===1){
-    const h=parseFloat(document.getElementById('wHeight').value);
-    if(!h){alert('Please enter the wall height.');return false;}
-    if(!floors.length){alert('Please add at least one floor.');return false;}
     const badFloor=floors.find(f=>!f.length||!f.width);
     if(badFloor){alert('Please enter length and width for '+badFloor.label+'.');return false;}
   }
@@ -770,7 +790,6 @@ function validateStep(s){
 function calculate(){
   if(!validateStep(0))return;
   if(!validateStep(1))return;
-  if(!floors.length){alert('Please add at least one floor.');return;}
 
   const tileSize=document.getElementById('tileSize').value;
   const inclRoof=document.getElementById('roofing').value==='yes';
@@ -794,157 +813,200 @@ function calculate(){
     wire:parseFloat(document.getElementById('pWire').value)||95,
   };
 
-  let grandMaterialCost=0,totalArea=0,totalVol=0,totalSand=0,totalGravel=0,floorHTMLs='';
+  function matRows(list){
+    return list.map(m=>`<div class="mat-line"><span class="mn">${m.name}</span><span><span class="mq">${m.qty} ${m.unit}</span><span class="mc">₱${fmt(m.cost)}</span></span></div>`).join('');
+  }
+  // All sections only show items available from the selected supplier
+  function filtered(list){return list.filter(m=>!m.field||supplierAvailMap[m.field]===true);}
+  function catCost(list){return list.reduce((s,m)=>s+(m.cost||0),0);}
 
-  // Shared structural data (columns & beams apply to all floors)
+  // ── Totals across all floors ──
+  let totalArea=0,totalFoundVol=0,totalSlabVol=0,totalNails=0,totalS16=0,totalTiles=0,totalGiSheets=0,totalLumber=0;
+  floors.forEach((f,idx)=>{
+    const area=f.length*f.width;
+    totalArea+=area;
+    totalFoundVol+=area*1.1*0.15;
+    totalSlabVol+=area*(f.slabThick||0.1);
+    totalNails+=Math.ceil(area/10);
+    totalS16+=Math.ceil(area/2);
+    if(tileSize!=='none'){
+      let tsm=0.09;
+      if(tileSize==='30x30')tsm=0.09;
+      else if(tileSize==='60x60')tsm=0.36;
+      totalTiles+=Math.ceil(area/tsm);
+    }
+    if(inclRoof&&idx===floors.length-1){totalGiSheets+=Math.ceil((area*1.2)/2.5);totalLumber+=Math.ceil(area/2);}
+  });
+
+  // ── Structural totals ──
   const totalColVol=columnEntries.reduce((s,c)=>s+c.qty*(c.dimW/1000)*(c.dimH/1000)*c.height,0);
   const totalColCount=columnEntries.reduce((s,c)=>s+c.qty,0);
   const totalBeamVol=beamEntries.reduce((s,b)=>s+b.qty*(b.depth/1000)*(b.width/1000)*b.length,0);
   const totalBeamCount=beamEntries.reduce((s,b)=>s+b.qty,0);
+  const totalConcreteVol=totalFoundVol+totalSlabVol+totalColVol+totalBeamVol;
+  const totalWireKg=Math.ceil(totalConcreteVol*2);
 
-  // Wall summary from entries
+  // ── Wall summary ──
   const wallSummary=wallEntries.map(w=>{
-    const area=(parseFloat(w.length)||0)*(parseFloat(w.height)||0);
+    const area=(parseFloat(w.length)||0)*(parseFloat(w.width)||0);
     const chbCount=w.type==='chb'?Math.ceil(area*12.5):0;
-    return{...w,wallArea:area,chbCount};
+    // Mortar: ~0.02 m³ per m², Plaster: ~0.015 m³ per m²
+    const mortarVol=w.type==='mortar'?+(area*0.02).toFixed(3):0;
+    const plasterVol=w.type==='plaster'?+(area*0.015).toFixed(3):0;
+    return{...w,wallArea:area,chbCount,mortarVol,plasterVol};
   });
 
-  floors.forEach((f,idx)=>{
-    const area=f.length*f.width;
-    const slabVol=area*(f.slabThick||0.1);
-    const foundVol=area*1.1*0.15;
-    const concreteVol=foundVol+totalColVol+totalBeamVol+slabVol;
-    const sand=+(concreteVol*0.5).toFixed(2);
-    const gravel=+(concreteVol*1.0).toFixed(2);
-    const nails=Math.ceil(area/10);
-    const wire=Math.ceil(concreteVol*2);
-
-    // ── CATEGORY 1: FLOOR / SLAB ──
-    const slabCementBags=Math.ceil((foundVol+slabVol)*9);
-    const slabSand=+((foundVol+slabVol)*0.5).toFixed(2);
-    const slabGravel=+((foundVol+slabVol)*1.0).toFixed(2);
-    const s16=Math.ceil(area/2);
-    let tileCount=0;
-    if(tileSize!=='none'){const tsm=tileSize==='60x60'?0.36:0.16;tileCount=Math.ceil(area/tsm);}
-    let giSheets=0,lumber=0;
-    if(inclRoof&&idx===floors.length-1){giSheets=Math.ceil((area*1.2)/2.5);lumber=Math.ceil(area/2);}
-
-    const slabMats=[];
+  // ────────────────────────────────────────────
+  // SECTION 1: SLAB (Foundation + Slab concrete)
+  // ────────────────────────────────────────────
+  const sec1Mats=[];
+  if(floors.length){
+    const slabTotalVol=totalFoundVol+totalSlabVol;
+    const slabCementBags=Math.ceil(slabTotalVol*9);
+    const slabSand=+(slabTotalVol*0.5).toFixed(2);
+    const slabGravel=+(slabTotalVol*1.0).toFixed(2);
     if(cementType==='portland'||cementType==='both'){
       const bags=cementType==='both'?Math.ceil(slabCementBags*0.7):slabCementBags;
-      slabMats.push({name:'Portland Cement (40kg)',qty:bags,unit:'bags',cost:bags*portlandPrice,field:'pCementPortland'});
+      sec1Mats.push({name:'Portland Cement (40kg)',qty:bags,unit:'bags',cost:bags*portlandPrice,field:'pCementPortland'});
     }
     if(cementType==='pozzolan'||cementType==='both'){
       const bags=cementType==='both'?Math.ceil(slabCementBags*0.3):slabCementBags;
-      slabMats.push({name:'Pozzolan Cement (40kg)',qty:bags,unit:'bags',cost:bags*pozzolanPrice,field:'pCementPozzolan'});
+      sec1Mats.push({name:'Pozzolan Cement (40kg)',qty:bags,unit:'bags',cost:bags*pozzolanPrice,field:'pCementPozzolan'});
     }
-    slabMats.push({name:'Sand',qty:slabSand,unit:'m³',cost:slabSand*P.sand,field:'pSand'});
-    slabMats.push({name:'Gravel',qty:slabGravel,unit:'m³',cost:slabGravel*P.gravel,field:'pGravel'});
-    slabMats.push({name:'Steel Bar 16mm (slab)',qty:s16,unit:'pcs',cost:s16*P.s16,field:'pSteel16'});
-    if(tileCount)slabMats.push({name:`Tiles ${tileSize} cm`,qty:tileCount,unit:'pcs',cost:tileCount*P.tile,field:'pTile'});
-    if(giSheets)slabMats.push({name:'G.I. Roofing Sheets',qty:giSheets,unit:'pcs',cost:giSheets*P.gi,field:'pGi'});
-    if(lumber)slabMats.push({name:'Coco Lumber 2×3',qty:lumber,unit:'pcs',cost:lumber*P.lumber,field:'pLumber'});
-    slabMats.push({name:'Assorted Nails',qty:nails,unit:'kg',cost:nails*P.nails,field:'pNails'});
-    slabMats.push({name:'Tie Wire',qty:wire,unit:'kg',cost:wire*P.wire,field:'pWire'});
+    sec1Mats.push({name:'Sand',qty:slabSand,unit:'m³',cost:slabSand*P.sand,field:'pSand'});
+    sec1Mats.push({name:'Gravel',qty:slabGravel,unit:'m³',cost:slabGravel*P.gravel,field:'pGravel'});
+    if(totalS16>0)sec1Mats.push({name:'Steel Bar 16mm',qty:totalS16,unit:'pcs',cost:totalS16*P.s16,field:'pSteel16'});
+    if(totalNails>0)sec1Mats.push({name:'Assorted Nails',qty:totalNails,unit:'kg',cost:totalNails*P.nails,field:'pNails'});
+    if(totalWireKg>0)sec1Mats.push({name:'Tie Wire',qty:totalWireKg,unit:'kg',cost:totalWireKg*P.wire,field:'pWire'});
+  }
+  const fSec1=filtered(sec1Mats);
+  const cost1=catCost(fSec1);
 
-    // ── CATEGORY 2: STRUCTURAL (Columns + Beams) ──
+  // ────────────────────────────────────────────
+  // SECTION 2: FLOORING (supplier-available items only)
+  // ────────────────────────────────────────────
+  const sec2Mats=[];
+  if(floors.length){
+    if(totalTiles>0){
+      const tileLabel=tileSize==='60x60'?'Tiles 60×60 cm':tileSize==='30x30'?'Tiles 30×30 cm':'Tiles';
+      sec2Mats.push({name:tileLabel,qty:totalTiles,unit:'pcs',cost:totalTiles*P.tile,field:'pTile'});
+    }
+    if(totalGiSheets>0)sec2Mats.push({name:'G.I. Roofing Sheets',qty:totalGiSheets,unit:'pcs',cost:totalGiSheets*P.gi,field:'pGi'});
+    if(totalLumber>0)sec2Mats.push({name:'Coco Lumber 2×3',qty:totalLumber,unit:'pcs',cost:totalLumber*P.lumber,field:'pLumber'});
+  }
+  // Flooring uses the same supplier-filter as the other sections
+  const fSec2=filtered(sec2Mats);
+  const cost2=catCost(fSec2);
+
+  // ────────────────────────────────────────────
+  // SECTION 3: STRUCTURAL ELEMENTS
+  // ────────────────────────────────────────────
+  const sec3Mats=[];
+  if((totalColVol+totalBeamVol)>0){
     const structCementBags=Math.ceil((totalColVol+totalBeamVol)*9);
     const structSand=+((totalColVol+totalBeamVol)*0.5).toFixed(2);
     const structGravel=+((totalColVol+totalBeamVol)*1.0).toFixed(2);
+    if(cementType==='portland'||cementType==='both'){
+      const bags=cementType==='both'?Math.ceil(structCementBags*0.7):structCementBags;
+      sec3Mats.push({name:'Portland Cement (40kg)',qty:bags,unit:'bags',cost:bags*portlandPrice,field:'pCementPortland'});
+    }
+    if(cementType==='pozzolan'||cementType==='both'){
+      const bags=cementType==='both'?Math.ceil(structCementBags*0.3):structCementBags;
+      sec3Mats.push({name:'Pozzolan Cement (40kg)',qty:bags,unit:'bags',cost:bags*pozzolanPrice,field:'pCementPozzolan'});
+    }
+    sec3Mats.push({name:'Sand',qty:structSand,unit:'m³',cost:structSand*P.sand,field:'pSand'});
+    sec3Mats.push({name:'Gravel',qty:structGravel,unit:'m³',cost:structGravel*P.gravel,field:'pGravel'});
     const s10=Math.ceil(totalColCount*12);
     const s12=Math.ceil(beamEntries.reduce((s,b)=>s+b.qty*b.length,0)/0.3);
+    if(s10>0)sec3Mats.push({name:`Steel Bar 10mm — Columns (${totalColCount} pcs)`,qty:s10,unit:'pcs',cost:s10*P.s10,field:'pSteel10'});
+    if(s12>0)sec3Mats.push({name:`Steel Bar 12mm — Beams (${totalBeamCount} pcs)`,qty:s12,unit:'pcs',cost:s12*P.s12,field:'pSteel12'});
+  }
+  const fSec3=filtered(sec3Mats);
+  const cost3=catCost(fSec3);
 
-    const structMats=[];
-    if((totalColVol+totalBeamVol)>0){
-      if(cementType==='portland'||cementType==='both'){
-        const bags=cementType==='both'?Math.ceil(structCementBags*0.7):structCementBags;
-        structMats.push({name:'Portland Cement (40kg)',qty:bags,unit:'bags',cost:bags*portlandPrice,field:'pCementPortland'});
-      }
-      if(cementType==='pozzolan'||cementType==='both'){
-        const bags=cementType==='both'?Math.ceil(structCementBags*0.3):structCementBags;
-        structMats.push({name:'Pozzolan Cement (40kg)',qty:bags,unit:'bags',cost:bags*pozzolanPrice,field:'pCementPozzolan'});
-      }
-      if(structSand>0)structMats.push({name:'Sand',qty:structSand,unit:'m³',cost:structSand*P.sand,field:'pSand'});
-      if(structGravel>0)structMats.push({name:'Gravel',qty:structGravel,unit:'m³',cost:structGravel*P.gravel,field:'pGravel'});
-      if(s10>0)structMats.push({name:`Steel Bar 10mm — Columns (${totalColCount} pcs)`,qty:s10,unit:'pcs',cost:s10*P.s10,field:'pSteel10'});
-      if(s12>0)structMats.push({name:`Steel Bar 12mm — Beams (${totalBeamCount} pcs)`,qty:s12,unit:'pcs',cost:s12*P.s12,field:'pSteel12'});
+  // ────────────────────────────────────────────
+  // SECTION 4: WALL & PLASTER FINISHES
+  // ────────────────────────────────────────────
+  const sec4Mats=[];
+  wallSummary.forEach((w,wi)=>{
+    const label=`Wall ${wi+1}`;
+    if(w.type==='chb'&&w.chbCount>0){
+      sec4Mats.push({name:`${label} — CHB (${w.wallArea.toFixed(1)} m²)`,qty:w.chbCount,unit:'pcs',cost:w.chbCount*P.chb4,field:'pChb4'});
+      // Mortar for CHB: 1 bag cement + 0.05m³ sand per m²
+      const mortarBags=Math.ceil(w.wallArea*1);
+      const mortarSand=+(w.wallArea*0.05).toFixed(2);
+      sec4Mats.push({name:`${label} — Mortar Cement`,qty:mortarBags,unit:'bags',cost:mortarBags*portlandPrice,field:'pCementPortland'});
+      sec4Mats.push({name:`${label} — Mortar Sand`,qty:mortarSand,unit:'m³',cost:mortarSand*P.sand,field:'pSand'});
+    }else if(w.type==='mortar'&&w.wallArea>0){
+      // Mortar wall: cement bags + sand
+      const mortarBags=Math.ceil(w.wallArea*1);
+      const mortarSand=+(w.wallArea*0.05).toFixed(2);
+      sec4Mats.push({name:`${label} — Mortar Cement (${w.wallArea.toFixed(1)} m²)`,qty:mortarBags,unit:'bags',cost:mortarBags*portlandPrice,field:'pCementPortland'});
+      sec4Mats.push({name:`${label} — Mortar Sand`,qty:mortarSand,unit:'m³',cost:mortarSand*P.sand,field:'pSand'});
+    }else if(w.type==='plaster'&&w.wallArea>0){
+      // Plaster: cement bags + sand, thinner mix
+      const plasterBags=Math.ceil(w.wallArea*0.5);
+      const plasterSand=+(w.wallArea*0.03).toFixed(2);
+      sec4Mats.push({name:`${label} — Plaster Cement (${w.wallArea.toFixed(1)} m²)`,qty:plasterBags,unit:'bags',cost:plasterBags*portlandPrice,field:'pCementPortland'});
+      sec4Mats.push({name:`${label} — Plaster Sand`,qty:plasterSand,unit:'m³',cost:plasterSand*P.sand,field:'pSand'});
     }
-
-    // ── CATEGORY 3: WALLS ──
-    const wallMats=[];
-    wallSummary.forEach(w=>{
-      if(w.type==='chb'&&w.chbCount>0){
-        const pricePerPc=w.chbSize==='6'?P.chb6:P.chb4;
-        wallMats.push({name:`CHB ${w.chbSize}" Wall — ${w.wallArea.toFixed(1)} m²`,qty:w.chbCount,unit:'pcs',cost:w.chbCount*pricePerPc,field:w.chbSize==='6'?'pChb6':'pChb4'});
-      }else if(w.type==='concrete'&&w.wallArea>0){
-        const conVol=+(w.wallArea*0.15).toFixed(2);
-        const wallBags=Math.ceil(conVol*9);
-        wallMats.push({name:`Concrete Wall — ${w.wallArea.toFixed(1)} m²`,qty:wallBags,unit:'bags cement',cost:wallBags*portlandPrice,field:'pCementPortland'});
-      }
-    });
-
-    // Filter by supplier availability
-    const fSlab=selectedSupplier?slabMats.filter(m=>!m.field||supplierAvailMap[m.field]===true):slabMats;
-    const fStruct=selectedSupplier?structMats.filter(m=>!m.field||supplierAvailMap[m.field]===true):structMats;
-    const fWalls=selectedSupplier?wallMats.filter(m=>!m.field||supplierAvailMap[m.field]===true):wallMats;
-
-    const slabCost=fSlab.reduce((s,m)=>s+(m.cost||0),0);
-    const structCost=fStruct.reduce((s,m)=>s+(m.cost||0),0);
-    const wallCost=fWalls.reduce((s,m)=>s+(m.cost||0),0);
-    const floorCost=slabCost+structCost+wallCost;
-
-    grandMaterialCost+=floorCost;
-    totalArea+=area;
-    totalVol+=concreteVol;
-    totalSand+=sand;
-    totalGravel+=gravel;
-
-    function matRows(list){return list.map(m=>`<div class="mat-line"><span class="mn">${m.name}</span><span><span class="mq">${m.qty} ${m.unit}</span><span class="mc">₱${fmt(m.cost)}</span></span></div>`).join('');}
-
-    // Build category sub-sections
-    const catStyle='font-size:11px;font-weight:700;color:var(--g700);text-transform:uppercase;letter-spacing:.5px;margin:10px 0 6px;padding-bottom:4px;border-bottom:1px solid var(--border)';
-
-    let bodyHTML=`
-      <div style="${catStyle}"> Floor / Slab <span style="font-weight:400;color:var(--ink3);font-size:11px;text-transform:none">— ${area.toFixed(1)} m² · Slab Vol: ${slabVol.toFixed(3)} m³</span></div>
-      ${fSlab.length?matRows(fSlab):'<div style="font-size:12px;color:var(--ink3);padding:4px 0">No materials (check supplier availability)</div>'}`;
-
-    if(fStruct.length||totalColCount||totalBeamCount){
-      bodyHTML+=`
-        <div style="${catStyle}"> Structural <span style="font-weight:400;color:var(--ink3);font-size:11px;text-transform:none">— ${totalColCount} col · ${totalBeamCount} beams · ${(totalColVol+totalBeamVol).toFixed(3)} m³</span></div>
-        ${fStruct.length?matRows(fStruct):'<div style="font-size:12px;color:var(--ink3);padding:4px 0">No columns or beams added</div>'}`;
-    }
-
-    bodyHTML+=`
-      <div style="${catStyle}"> Walls <span style="font-weight:400;color:var(--ink3);font-size:11px;text-transform:none">— ${wallSummary.length} wall section(s)</span></div>
-      ${fWalls.length?matRows(fWalls):'<div style="font-size:12px;color:var(--ink3);padding:4px 0">No walls added</div>'}`;
-
-    floorHTMLs+=`
-      <div class="floor-result">
-        <div class="floor-result-head">
-          <span>${f.label} <span class="badge" style="background:rgba(255,255,255,0.18);color:#fff;margin-left:6px">${area.toFixed(1)} m²</span></span>
-          <span>₱${fmt(floorCost)}</span>
-        </div>
-        <div class="floor-result-body">${bodyHTML}</div>
-      </div>`;
   });
+  const fSec4=filtered(sec4Mats);
+  const cost4=catCost(fSec4);
 
+  // ────────────────────────────────────────────
+  // ADDITIONAL MATERIALS
+  // ────────────────────────────────────────────
   let customMatCost=0,customMatHTML='';
   const validCustom=customMats.filter(m=>m.name&&parseFloat(m.qty)>0&&parseFloat(m.price)>0);
   if(validCustom.length){
     customMatCost=validCustom.reduce((s,m)=>s+(parseFloat(m.qty)*parseFloat(m.price)),0);
-    grandMaterialCost+=customMatCost;
-    customMatHTML=`<div class="floor-result"><div class="floor-result-head" style="background:var(--g700)"><span>Additional Materials</span><span>₱${fmt(customMatCost)}</span></div><div class="floor-result-body">${validCustom.map(m=>`<div class="mat-line"><span class="mn">${m.name}</span><span><span class="mq">${parseFloat(m.qty)} ${m.unit}</span><span class="mc">₱${fmt(parseFloat(m.qty)*parseFloat(m.price))}</span></span></div>`).join('')}</div></div>`;
+    customMatHTML=`
+      <div class="floor-result">
+        <div class="floor-result-head" style="background:var(--g700)">
+          <span>➕ Additional Materials</span>
+          <span>₱${fmt(customMatCost)}</span>
+        </div>
+        <div class="floor-result-body">${validCustom.map(m=>`<div class="mat-line"><span class="mn">${m.name}</span><span><span class="mq">${parseFloat(m.qty)} ${m.unit}</span><span class="mc">₱${fmt(parseFloat(m.qty)*parseFloat(m.price))}</span></span></div>`).join('')}</div>
+      </div>`;
   }
+
+  const grandMaterialCost=cost1+cost2+cost3+cost4+customMatCost;
+  const totalSand=+(totalConcreteVol*0.5).toFixed(2);
+  const totalGravel=+(totalConcreteVol*1.0).toFixed(2);
+
+  // Floor area sub-labels
+  const floorLabels=floors.map(f=>`${f.label}: ${(f.length*f.width).toFixed(1)} m²`).join(' · ')||'No floors added';
+
+  function catBlock(icon,title,subtitle,matList,cost){
+    return`<div class="floor-result">
+      <div class="floor-result-head">
+        <span>${icon} ${title} ${subtitle?`<span style="font-size:11px;font-weight:400;opacity:.75;margin-left:6px">${subtitle}</span>`:''}
+        </span>
+        <span>₱${fmt(cost)}</span>
+      </div>
+      <div class="floor-result-body">
+        ${matList.length?matRows(matList):'<div style="font-size:12px;color:var(--ink3);padding:6px 0;font-style:italic">No items — add floors or check supplier availability.</div>'}
+      </div>
+    </div>`;
+  }
+
+  const breakdownHTML=
+    catBlock('','FLOORING',fSec2.length?`(${fSec2.length} item${fSec2.length>1?'s':''} from supplier)`:'(supplier items only)',fSec2,cost2)+
+    catBlock('','SLAB',floors.length?`(${totalArea.toFixed(1)} m\u00B2)`:'',fSec1,cost1)+
+    catBlock('','STRUCTURAL ELEMENTS',totalColCount||totalBeamCount?`(${totalColCount} col \u00B7 ${totalBeamCount} beams)`:'',fSec3,cost3)+
+    catBlock('','WALLS AND FINISHES',wallSummary.length?`(${wallSummary.length} section${wallSummary.length>1?'s':''})`:'',fSec4,cost4)+
+    customMatHTML;
 
   document.getElementById('rTotal').textContent='₱'+fmt(grandMaterialCost);
   document.getElementById('rProjName').textContent=document.getElementById('projName').value||'Untitled Project';
   const _results=document.getElementById('resultsContent');
   _results.dataset.area=totalArea.toFixed(1);
   _results.dataset.floors=floors.length;
-  document.getElementById('rVol').textContent=totalVol.toFixed(2);
-  document.getElementById('rSand').textContent=totalSand.toFixed(2);
-  document.getElementById('rGravel').textContent=totalGravel.toFixed(2);
-  document.getElementById('floorBreakdowns').innerHTML=floorHTMLs+customMatHTML;
+  document.getElementById('rVol').textContent=totalConcreteVol.toFixed(2);
+  document.getElementById('rSand').textContent=totalSand;
+  document.getElementById('rGravel').textContent=totalGravel;
+  document.getElementById('floorBreakdowns').innerHTML=breakdownHTML;
   document.getElementById('rMatCost').textContent='₱'+fmt(grandMaterialCost);
   document.getElementById('rTotalBottom').textContent='₱'+fmt(grandMaterialCost);
   const supTag=document.getElementById('rSupplierTag');
