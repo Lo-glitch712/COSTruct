@@ -4,7 +4,7 @@
 //  Just change the URL below to your Apps Script Web App URL
 // ============================================================
 
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbza63VsvXxXpTMOJHToUc3OiJVO_ywy_n616BwVPJfafU8YMPDbMnWg5mGMRcEaKTP9/exec';
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxUDOGnitodY2g3ZsXybujPGSk4UDcITMs8dPuwk0jC-UK03GUSzxfDAzt9raHY3bLU/exec';
 // Paste the URL from: Apps Script → Deploy → Manage deployments
 
 // ── Session (stored in localStorage) ─────────────────────────
