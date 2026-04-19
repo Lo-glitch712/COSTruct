@@ -254,22 +254,28 @@ async function doRegister(e) {
     return showAlert('regAlert', signUpError.message || 'Registration failed.', 'error');
   }
 
-  const userId = signUpData.user?.id;
-  if (!userId) {
-    return showAlert('regAlert', 'Registration succeeded but no user was returned. Check email confirmation settings.', 'error');
+  // 2. Immediately sign in to get a live session so RLS inserts work
+  //    (bypasses email confirmation requirement)
+  const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+    email, password: pw
+  });
+  if (signInError) {
+    // Auth created but can't sign in — likely email confirmation is still on in Supabase dashboard
+    return showAlert('regAlert', 'Account created but could not auto-login: ' + signInError.message, 'error');
   }
 
-  // NOTE: If "Confirm email" is enabled in Supabase, the user has no session yet
-  // and the RLS inserts below will fail. For dev, disable email confirmation in
-  // Dashboard → Authentication → Providers → Email, OR handle it server-side.
+  const userId = signInData.user?.id;
+  if (!userId) {
+    return showAlert('regAlert', 'Unexpected error: no user ID returned.', 'error');
+  }
 
-  // 2. Create the profile row
+  // 3. Create the profile row (now we have a valid session for RLS)
   const { error: profileErr } = await supabase.from('profiles').insert({
     id: userId, name, role, contact, address
   });
   if (profileErr) console.error('profile insert:', profileErr);
 
-  // 3. If supplier, create the supplier row
+  // 4. If supplier, create the supplier row
   if (role === 'supplier') {
     const { error: supErr } = await supabase.from('suppliers').insert({
       user_id: userId,
@@ -286,6 +292,9 @@ async function doRegister(e) {
     });
     if (supErr) console.error('supplier insert:', supErr);
   }
+
+  // 5. Sign out and send user to login panel
+  await supabase.auth.signOut();
 
   showAlert('regAlert', `Account created for ${name}! Redirecting to login...`, 'success');
   setTimeout(() => {
